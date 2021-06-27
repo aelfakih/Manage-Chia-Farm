@@ -14,8 +14,8 @@ directories you want to manage.  Once you have finish making your changes, you a
 
 
 # Example output
-> MaximizeChiaSpace | checks that plots are not duplicated, cleans junk files and reorganizes plots to maximize farming space
-by Adonis Elfakih 2021, https://github.com/aelfakih
+> Manage-Chia-Farm | checks that plots are not duplicated, cleans junk files and reorganizes plots to maximize farming space
+by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm
 >
 >* Scanning farm ... Found  447 plots listed!
 >* [1/3] Checking for plots that don't have a '.plot' extension ... [OK]
