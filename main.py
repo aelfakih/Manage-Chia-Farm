@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Manage-Chia-Farm
 # Copyright Apache License Version 2.0
 # Contact Adonis Elfakih https://github.com/aelfakih
 
@@ -53,8 +54,8 @@ if __name__ == '__main__':
     # Clear Screen to start ...
     clear = lambda: os.system('cls')
     clear()
-    print('MaximizeChiaSpace | checks that plots are not duplicated, cleans junk files and reorganizes plots to maximize farming space')
-    print('by Adonis Elfakih 2021, https://github.com/aelfakih\n')
+    print('Manage-Chia-Farm | checks that plots are not duplicated, cleans junk files and reorganizes plots to maximize farming space')
+    print('by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm\n')
 
 
 
