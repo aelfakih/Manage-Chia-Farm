@@ -1,7 +1,7 @@
 ﻿# Manage-Chia-Farm
 This program helps chia farmers manage the thousands of plots within their farm and helps in the following three areas:
-  * Scans farm for non-plot files and allows you to delete them 
-  * Scan the farm for duplicates and allows you to easily keep one version and clear up space.
+  * Scans farm for **non-plot files** --  In each of the farm folders, look for files that do not end with *.plot* extension and bring that to the manager attention.  The manager is then prompted to delete all the offending files to clear space for plots.
+  * Scan the farm for **duplicates** -- Search the farm for duplicate file names and report how many were found.  Manager is given the option to delete duplicates and maintain one copy to clear up space.
   * (Coming up later) Move plots within farm to maximize space usage and clear up space to add more plots
 
 > Script was tested with python 3.9 on Windows 10 
