@@ -1,6 +1,6 @@
 chia_config_file: C:\Users\Admin\.chia\mainnet\config\config.yaml
-check_for_non_plots: false
-check_duplicates_plots: false
+check_for_non_plots: true
+check_duplicates_plots: true
 verbose: false
 evacuate_plots:
   -Q:\farm003
