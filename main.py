@@ -98,74 +98,86 @@ plot_list = list(filter(p.match,chia_farm))
 # find symmetric difference.
 non_plot_list = set(plot_list).symmetric_difference(chia_farm)
 number_of_plots = len(chia_farm)
-print("* Scanning farm ... Found ", number_of_plots , "plots listed!")
+print("* Scanning your farm! Found", number_of_plots , "plots listed!")
 
-### check for non plot files
-print ("* [1/3] Checking for plots that don't have a '.plot' extension ... ",end="")
-if  non_plot_list:
-    number_of_files = len(non_plot_list)
-    print("[NOK]")
-    print(indent ("*", "WARNING! Found %s non-plot files in farm." % (number_of_files)))
-    for file in non_plot_list:
-        size_gb = round(os.path.getsize(file)/(2**30),2)
-        total_size_gb += size_gb
-        print(indent(">", "%s (%s GiB)" % (file,size_gb)))
-    if yesno(indent("?","Do you want to DELETE NON-PLOT files and save %s GB of storage space?" % (total_size_gb))):
+
+
+
+if get_config('config.yaml').get('check_for_non_plots'):
+    ### check for non plot files
+    print("* Checking for plots that don't have a '.plot' extension ... ", end="")
+    if non_plot_list:
+        number_of_files = len(non_plot_list)
+        print("[NOK]")
+        print(indent("*", "WARNING! Found %s non-plot files in farm." % (number_of_files)))
         for file in non_plot_list:
-            if os.path.isfile(file):
-                os.remove(file)
-                print(indent("*", "Deleting:  %s" % file))
-    else:
-        print(indent("*","Skipping. No files deleted!"))
-else:
-    print ("[OK]")
-
-
-
-# Load plot_ dictionaries from farm directories
-for dir in plot_dirs:
-    arr = os.listdir(dir)
-    for plot in arr:
-        plotnames.append(plot)
-        if plot_path.get(plot):
-            #print ("Duplicate %s %s %s" % (plot_path.get(plot),dir,plot))
-            plot_path[plot] = "%s , %s" % (plot_path.get(plot),dir)
-            plot_count[plot] = plot_count.get(plot) + 1
+            size_gb = round(os.path.getsize(file) / (2 ** 30), 2)
+            total_size_gb += size_gb
+            print(indent(">", "%s (%s GiB)" % (file, size_gb)))
+        if yesno(
+                indent("?", "Do you want to DELETE NON-PLOT files and save %s GB of storage space?" % (total_size_gb))):
+            for file in non_plot_list:
+                if os.path.isfile(file):
+                    os.remove(file)
+                    print(indent("*", "Deleting:  %s" % file))
         else:
-            plot_path[plot] = dir
-            plot_count[plot] = 1
-
-
-
-### check for non plot files
-import collections
-duplicate_plotnames = ([item for item, count in collections.Counter(plotnames).items() if count > 1])
-print ("* [2/3] Checking for duplicate plot filenames ... ",end="")
-if  duplicate_plotnames:
-    number_of_files = len(duplicate_plotnames)
-    print("[NOK]")
-    print(indent ("*", "WARNING! Found %s plots with multiple copies" % (number_of_files)))
-    for file in duplicate_plotnames:
-        print(indent(">", "%s  (%s)" % (file,plot_path[file])))
-    if yesno(indent("?","Do you want to DELETE DUPLICATE files?")):
-        for file in duplicate_plotnames:
-            plot_locations = plot_path[file].split(",")
-            count = 0
-            for dir in plot_locations:
-                file_to_delete = dir.strip() + '\\' + file
-                if count == 0:
-                    count += 1
-                    print(indent("*", "Keeping [%s]" % (file_to_delete)))
-                else:
-                    print(indent("*", "Deleting [%s]" % (file_to_delete)))
-                    os.remove(file_to_delete)
+            print(indent("*", "Skipping. No files deleted!"))
     else:
-        print(indent("*","Skipping. No files deleted!"))
+        print("[OK]")
 else:
-    print ("[OK]")
+    print("* Skipped checking for non-plots as configured in config.yaml")
+
+
+
+if get_config('config.yaml').get('check_duplicates_plots'):
+    # Load plot_ dictionaries from farm directories
+    for dir in plot_dirs:
+        arr = os.listdir(dir)
+        for plot in arr:
+            plotnames.append(plot)
+            if plot_path.get(plot):
+                # print ("Duplicate %s %s %s" % (plot_path.get(plot),dir,plot))
+                plot_path[plot] = "%s , %s" % (plot_path.get(plot), dir)
+                plot_count[plot] = plot_count.get(plot) + 1
+            else:
+                plot_path[plot] = dir
+                plot_count[plot] = 1
+
+    ### check for non plot files
+    import collections
+
+    duplicate_plotnames = ([item for item, count in collections.Counter(plotnames).items() if count > 1])
+    print("* Checking for duplicate plot filenames ... ", end="")
+    if duplicate_plotnames:
+        number_of_files = len(duplicate_plotnames)
+        print("[NOK]")
+        print(indent("*", "WARNING! Found %s plots with multiple copies" % (number_of_files)))
+        for file in duplicate_plotnames:
+            print(indent(">", "%s  (%s)" % (file, plot_path[file])))
+        if yesno(indent("?", "Do you want to DELETE DUPLICATE files?")):
+            for file in duplicate_plotnames:
+                plot_locations = plot_path[file].split(",")
+                count = 0
+                for dir in plot_locations:
+                    file_to_delete = dir.strip() + '\\' + file
+                    if count == 0:
+                        count += 1
+                        print(indent("*", "Keeping [%s]" % (file_to_delete)))
+                    else:
+                        print(indent("*", "Deleting [%s]" % (file_to_delete)))
+                        os.remove(file_to_delete)
+        else:
+            print(indent("*", "Skipping. No files deleted!"))
+    else:
+        print("[OK]")
+else:
+    print("* Skipped checking for duplicate plot filenames per config.yaml")
+
+
+
 
 average_size = round(Average(plot_sizes),2)
-print ("* [3/3] Checking for space in farms to maximize space usage (TBD) ... ")
+print ("* Checking for space in farms to maximize space usage (TBD) ... ")
 print(indent("*", "Using Average plot size of %s GiB to fit plots in available farm space" % (average_size)))
 
 for dir in plot_dirs:
