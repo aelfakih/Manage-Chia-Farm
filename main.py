@@ -2,22 +2,19 @@
 # Manage-Chia-Farm
 # Copyright Apache License Version 2.0
 # Contact Adonis Elfakih https://github.com/aelfakih
+# -- Features to build when needed --
+# (WIP) As a farmer I want to be able to migrate files out of a specific plot directory, so that I safely remove it from the farm
+# As a farmer I want to make sure that the plots in my farm are valid and prunce on that are not, so that I am getting the most value from my farm space
+# As a farmer I want to optimize my farm without having to know the drives of each plot (read config from chia config file)
 
-# TO-DO
-# read the plots_dirs from .chia config file
-# in step 2/3 we may want to validate which between the two plots passes test (in this sprint, I asume both copies are valid)
-
-# List the directories to explore
 import pathlib
-
-plot_dirs = ['E:\\farm003','D:\\farm004','F:\\farm002','G:\\farm001','H:\\farm005','I:\\farm006','J:\\farm007','L:\\farm008','K:\\farm011','M:\\farm012','P:\\farm009','O:\\farm010','N:\\farm013','Q:\\farm015','R:\\farm014']
-
-# Import the modules we need
 import os
 import re
 import sys
 import os
 import shutil
+import yaml
+
 
 # initialize do not change
 chia_farm = []
@@ -26,6 +23,22 @@ plotnames = []
 plot_path={}
 plot_count={}
 plot_sizes=[]
+
+
+def get_config(file_path):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Unable to find the config.yaml file. Expected location: {file_path}")
+    f = open(file_path, 'r')
+    config = yaml.load(stream=f, Loader=yaml.Loader)
+    f.close()
+    return config
+
+def get_chia_location(config):
+    return config.get('chia_config_file')
+
+def get_plot_directories(config):
+    return config.get('harvester').get('plot_directories')
+
 
 # cleanup the cli output to avoid confusion when cleaning space
 def indent(symbol,string):
@@ -57,7 +70,14 @@ if __name__ == '__main__':
     print('Manage-Chia-Farm | checks that plots are not duplicated, cleans junk files and reorganizes plots to maximize farming space')
     print('by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm\n')
 
+# Get the location of the chia config.yaml
+filename = 'config.yaml'
+config = get_config(filename)
+filename = get_chia_location(config=config)
 
+#get the plot_directories
+chia_config = get_config(filename)
+plot_dirs = get_plot_directories(chia_config)
 
 # Load chia_farm from farm directories
 for dir in plot_dirs:
