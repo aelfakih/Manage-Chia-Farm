@@ -43,3 +43,6 @@ by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm
 >    * Skipping N:\ not enough space for plots
 >    * [TBD] Q:\ has 6126 GiB free space, good enough for 60 plot(s)
 >    * [TBD] R:\ has 221 GiB free space, good enough for 2 plot(s)
+
+# How to Support
+XCH: xch13px92qjn4c8kzcdn8k02cvwpe6l97py3vzst8m3h2qnz7wxewmrscxck5d
