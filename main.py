@@ -100,8 +100,8 @@ non_plot_list = set(plot_list).symmetric_difference(chia_farm)
 number_of_plots = len(chia_farm)
 print("* Scanning your farm! Found", number_of_plots , "plots listed!")
 
-
-
+# decide how verbose we should be
+verbose = get_config('config.yaml').get('verbose')
 
 if get_config('config.yaml').get('check_for_non_plots'):
     ### check for non plot files
@@ -125,7 +125,8 @@ if get_config('config.yaml').get('check_for_non_plots'):
     else:
         print("[OK]")
 else:
-    print("* Skipped checking for non-plots as configured in config.yaml")
+    if verbose:
+        print("* Skipped checking for non-plots as configured in config.yaml")
 
 
 
@@ -171,7 +172,8 @@ if get_config('config.yaml').get('check_duplicates_plots'):
     else:
         print("[OK]")
 else:
-    print("* Skipped checking for duplicate plot filenames per config.yaml")
+    if verbose:
+        print("* Skipped checking for duplicate plot filenames per config.yaml")
 
 
 
@@ -188,9 +190,10 @@ for dir in plot_dirs:
     if free > average_size:
         #print ("Drive %s (%s): Total %s Used %s Free %s GiB" % (drive, dir, total // (2**30), used // (2**30), free ))
         mod = round(free/average_size)
-        print(indent("*", "[TBD] %s has %s GiB free space, good enough for %s plot(s)" % (drive, free, mod)))
+        print(indent("*", "%s has %s GiB free space, good enough for %s plot(s)" % (dir, free, mod)))
     else:
-        print(indent("*", "Skipping %s not enough space for plots" % (drive)))
+        if verbose:
+            print(indent("*", "Skipping %s not enough space for plots" % (dir)))
 
 
 # Press the green button in the gutter to run the script.
