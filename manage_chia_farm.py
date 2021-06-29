@@ -2,16 +2,13 @@
 # Manage-Chia-Farm
 # Copyright Apache License Version 2.0
 # Contact Adonis Elfakih https://github.com/aelfakih
-# -- Features to build when needed --
-# (WIP) As a farmer I want to be able to migrate files out of a specific plot directory, so that I safely remove it from the farm
-# As a farmer I want to make sure that the plots in my farm are valid and prunce on that are not, so that I am getting the most value from my farm space
-# As a farmer I want to optimize my farm without having to know the drives of each plot (read config from chia config file)
+
+# Features kanban is available on https://github.com/aelfakih/Manage-Chia-Farm/projects
 
 import pathlib
 import os
 import re
 import sys
-import os
 import shutil
 import yaml
 
@@ -23,45 +20,10 @@ plotnames = []
 plot_path={}
 plot_count={}
 plot_sizes=[]
+evacuate_drives=[]
+defrag_plan=[]
 
-
-def get_config(file_path):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Unable to find the config.yaml file. Expected location: {file_path}")
-    f = open(file_path, 'r')
-    config = yaml.load(stream=f, Loader=yaml.Loader)
-    f.close()
-    return config
-
-def get_chia_location(config):
-    return config.get('chia_config_file')
-
-def get_plot_directories(config):
-    return config.get('harvester').get('plot_directories')
-
-
-# cleanup the cli output to avoid confusion when cleaning space
-def indent(symbol,string):
-    tab = '    '
-    space = ' '
-    sentence = tab + symbol + space + string
-    return(sentence)
-
-# check for y/n answers
-def yesno(question):
-    """Simple Yes/No Function."""
-    prompt = "%s (y/n): " % (question)
-    ans = input(prompt).strip().lower()
-    if ans not in ['y', 'n']:
-        print(indent("*",f'{ans} is an invalid reponse, please try again...'))
-        return yesno(question)
-    if ans == 'y':
-        return True
-    return False
-
-# Python program to get average of a list
-def Average(lst):
-	return sum(lst) / len(lst)
+from functions import *
 
 if __name__ == '__main__':
     # Clear Screen to start ...
@@ -103,9 +65,10 @@ print("* Scanning your farm! Found", number_of_plots , "plots listed!")
 # decide how verbose we should be
 verbose = get_config('config.yaml').get('verbose')
 
+#### CLEAN FOR NON-PLOTS #####
 if get_config('config.yaml').get('check_for_non_plots'):
     ### check for non plot files
-    print("* Checking for plots that don't have a '.plot' extension ... ", end="")
+    print("* Checking for non-plots files (without a '.plot' extension) ... ", end="")
     if non_plot_list:
         number_of_files = len(non_plot_list)
         print("[NOK]")
@@ -125,11 +88,9 @@ if get_config('config.yaml').get('check_for_non_plots'):
     else:
         print("[OK]")
 else:
-    if verbose:
-        print("* Skipped checking for non-plots as configured in config.yaml")
+    if verbose: print("* Skipped checking for non-plots as configured in config.yaml")
 
-
-
+#### CLEAN FOR DUPLICATES ####
 if get_config('config.yaml').get('check_duplicates_plots'):
     # Load plot_ dictionaries from farm directories
     for dir in plot_dirs:
@@ -172,30 +133,29 @@ if get_config('config.yaml').get('check_duplicates_plots'):
     else:
         print("[OK]")
 else:
-    if verbose:
-        print("* Skipped checking for duplicate plot filenames per config.yaml")
+    if verbose: print("* Skipped checking for duplicate plot filenames per config.yaml")
 
+#### DEFRAGMENT FARM ####
+evacuate_drives = get_config('config.yaml').get('evacuate_drives')
 
-
+if evacuate_drives:
+    if verbose: print("* Will evacuate %s" % (evacuate_drives))
 
 average_size = round(Average(plot_sizes),2)
-print ("* Checking for space in farms to maximize space usage (TBD) ... ")
+print ("* Checking for space on drives farms to maximize space usage (defragment)... ")
 
 if verbose:
     print(indent("*", "Using Average plot size of %s GiB to fit plots in available farm space" % (average_size)))
 
-for dir in plot_dirs:
-    drive = pathlib.Path(dir).parts[0]
-    total, used, free = shutil.disk_usage(drive)
-    # convert to GiB
-    free = free // (2**30)
-    if free > average_size:
-        #print ("Drive %s (%s): Total %s Used %s Free %s GiB" % (drive, dir, total // (2**30), used // (2**30), free ))
-        mod = round(free/average_size)
-        print(indent("*", "%s has %s GiB free space, good enough for %s plot(s)" % (dir, free, mod)))
-    else:
-        if verbose:
-            print(indent("*", "Skipping %s not enough space for plots" % (dir)))
+# loop while defrag
+#iterate = len(plot_dirs)
+#while (iterate > 0) and (get_config('config.yaml').get('defragment_the_farm')):
+#    iterate, to_plot, from_plot, plots_to_move = defrag_plots(dir)
+#    print("%s %s %s %s" % (iterate, to_plot, from_plot, plots_to_move))
+
+#print("MIN %s %s" % (min_storage_drive, min_storage_available))
+#print("MAX %s %s" % (max_storage_drive, max_storage_available))
+#print(defrag_plan)
 
 
 # Press the green button in the gutter to run the script.

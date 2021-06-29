@@ -1,3 +1,10 @@
+import pathlib
+import os
+import re
+import sys
+import shutil
+import yaml
+
 # cleanup the cli output to avoid confusion when cleaning space
 def indent(symbol,string):
     tab = '    '
@@ -22,7 +29,7 @@ def Average(lst):
 	return sum(lst) / len(lst)
 
 # defrag logic
-def defrag_plots(dir):
+def defrag_plots(plot_dirs):
     min_storage_available = 9999999999
     max_storage_available = 0
     counter = 0
