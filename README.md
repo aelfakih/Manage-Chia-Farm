@@ -7,7 +7,7 @@ This program helps chia farmers manage the thousands of plots within their farm 
 > Script was tested with python 3.9 on Windows 10 
 
 
-#Installation
+# Installation
 
 Load required libraries using the following command
 
