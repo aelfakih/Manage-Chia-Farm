@@ -180,7 +180,9 @@ else:
 
 average_size = round(Average(plot_sizes),2)
 print ("* Checking for space in farms to maximize space usage (TBD) ... ")
-print(indent("*", "Using Average plot size of %s GiB to fit plots in available farm space" % (average_size)))
+
+if verbose:
+    print(indent("*", "Using Average plot size of %s GiB to fit plots in available farm space" % (average_size)))
 
 for dir in plot_dirs:
     drive = pathlib.Path(dir).parts[0]
