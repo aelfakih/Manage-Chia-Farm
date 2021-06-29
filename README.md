@@ -8,6 +8,7 @@ This program helps chia farmers manage the thousands of plots within their farm 
 
 
 #Installation
+
 Load required libraries using the following command
 
 `pip install -r .\install.txt`
