@@ -8,15 +8,24 @@ This program helps chia farmers manage the thousands of plots within their farm 
 
 
 #Installation
-Open the included config.yaml file and enter the path to chia's config.yaml into the chia_config_file variable. The format is usually something like this (change the USERNAME to match your path):
-> chia_config_file: C:\Users\USERNAME\\.chia\mainnet\config\config.yaml
-
 Load required libraries using the following command
-> pip install -r .\install.txt
+
+`pip install -r .\install.txt`
+
+# Configuration
+
+Open the included config.yaml file and enter the path to chia's config.yaml into the chia_config_file variable. The format is usually something like this (change the USERNAME to match your path):
+
+```
+# location of Chia's configuration file. It is used to navigate the plots directories
+chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
+```
+
 
 # Usage
 To run this program, execute the following command
-> **python main.py**
+
+`python manage_chia_farm.py`
 
 
 # Example output
