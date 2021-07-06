@@ -28,10 +28,14 @@ def yesno(question):
 def Average(lst):
 	return sum(lst) / len(lst)
 
+
+
+
 # defrag logic
-def defrag_plots(plot_dirs):
+def defrag_plots(plot_dirs, average_size):
     min_storage_available = 9999999999
     max_storage_available = 0
+
     counter = 0
     for dir in plot_dirs:
         drive = pathlib.Path(dir).parts[0]
@@ -44,7 +48,7 @@ def defrag_plots(plot_dirs):
             counter += 1
             mod = round(free/average_size)
             print(indent(">", "%s has %s GiB free, good enough for %s plot(s)" % (dir, free, mod)))
-            if verbose: print (indent("*","Drive %s (%s): Total %s GiB Used %s GiB Free %s GiB (~%s plots)" % (drive, dir, total // (2**30), used, free , calculated_num_of_plots)))
+            #print (indent("*","Drive %s (%s): Total %s GiB Used %s GiB Free %s GiB (~%s plots)" % (drive, dir, total // (2**30), used, free , calculated_num_of_plots)))
             # find the smallest plot available
             if free < min_storage_available:
                 min_storage_available = free
@@ -55,8 +59,6 @@ def defrag_plots(plot_dirs):
                 max_storage_available = free
                 max_storage_drive = drive
 
-        else:
-            if verbose: print(indent("*", "Skipping %s not enough space for plots" % (dir)))
     return [counter-2,min_storage_drive,max_storage_drive,max_plots_to_fit]
 
 
@@ -70,7 +72,4 @@ def get_config(file_path):
 
 def get_chia_location(config):
     return config.get('chia_config_file')
-
-def get_plot_directories(config):
-    return config.get('harvester').get('plot_directories')
 
