@@ -1,20 +1,21 @@
 # location of Chia's configuration file. It is used to navigate the plots directories
 chia_config_file: C:\Users\Admin\.chia\mainnet\config\config.yaml
-
-# when verbose is false, the program reduces the number of messages generated to the minimum. False by defaults
+# location of chia executable, used when importing plots to verify that they belong to this farm
+chia_binary: C:\Users\Admin\AppData\Local\chia-blockchain\app-1.1.7\resources\app.asar.unpacked\daemon\chia.exe
+# when verbose is true, the program ouputs extra information into log\audit.log
 verbose: true
-
-# you can enable or disable parts of the program through these toggles
 # check_for_non_plots is true or false. When True we scan for plots that do not have .plot extension
 check_for_non_plots: true
-
 # check_duplicates_plots is true or false. When true we scan for duplicate file names
 check_duplicates_plots: true
-
 # defrag the farm
-defragment_the_farm: true
-
-# evacuate_plots is a list of plots that you want to empty out as you use this software
-#evacuate_drives:
-#  - Q:\
-#  - L:\
+defragment_the_farm: ture
+# drives to evacuate
+evacuate_drives:
+  - J:\\farm007
+  - L:\\farm008
+  - T:\\farm017
+  - U:\\farm019
+  - M:\\farm012
+  - V:\\farm020
+  - E:\\farm018
