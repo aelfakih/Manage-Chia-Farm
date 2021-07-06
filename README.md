@@ -11,7 +11,7 @@ This program helps chia farmers manage the thousands of plots within their farm 
 
 Load required libraries using the following command
 
-`pip install -r .\install.txt`
+`pip install -r .\requirements.txt`
 
 # Configuration
 
