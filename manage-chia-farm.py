@@ -109,6 +109,8 @@ def get_duplicte_plotnames(plot_dirs) :
     # Load plot_ dictionaries from farm directories
     duplicate_plotnames=[]
     plotnames=[]
+    plot_path={}
+    plot_count={}
     for dir in plot_dirs :
         arr = os.listdir ( dir )
         for plot in arr :
@@ -116,6 +118,7 @@ def get_duplicte_plotnames(plot_dirs) :
             if plot_path.get ( plot ) :
                 # print ("Duplicate %s %s %s" % (plot_path.get(plot),dir,plot))
                 plot_path[plot] = "%s , %s" % (plot_path.get ( plot ) , dir)
+                plot_count[plot] = plot_count.get ( plot ) + 1
                 plot_count[plot] = plot_count.get ( plot ) + 1
             else :
                 plot_path[plot] = dir
