@@ -111,18 +111,22 @@ def get_duplicte_plotnames(plot_dirs) :
     plotnames=[]
     plot_path={}
     plot_count={}
+    ignore_these = ["$RECYCLE.BIN","System Volume Information"]
     for dir in plot_dirs :
-        arr = os.listdir ( dir )
-        for plot in arr :
-            plotnames.append ( plot )
-            if plot_path.get ( plot ) :
-                # print ("Duplicate %s %s %s" % (plot_path.get(plot),dir,plot))
-                plot_path[plot] = "%s , %s" % (plot_path.get ( plot ) , dir)
-                plot_count[plot] = plot_count.get ( plot ) + 1
-                plot_count[plot] = plot_count.get ( plot ) + 1
-            else :
-                plot_path[plot] = dir
-                plot_count[plot] = 1
+        if os.path.isdir ( dir ) :
+            arr = os.listdir ( dir )
+            for plot in arr :
+                """ Skip Windows recycle and volume files"""
+                if plot not in ignore_these:
+                    plotnames.append ( plot )
+                    if plot_path.get ( plot ) :
+                        # print ("Duplicate %s %s %s" % (plot_path.get(plot),dir,plot))
+                        plot_path[plot] = "%s , %s" % (plot_path.get ( plot ) , dir)
+                        plot_count[plot] = plot_count.get ( plot ) + 1
+                        plot_count[plot] = plot_count.get ( plot ) + 1
+                    else :
+                        plot_path[plot] = dir
+                        plot_count[plot] = 1
     duplicate_plotnames = ([item for item , count in collections.Counter ( plotnames ).items ( ) if count > 1])
     return duplicate_plotnames, plot_path
 
@@ -216,7 +220,7 @@ def find_duplicate_plots() :
                             print ( indent ( "*" , "Keeping [%s]" % (file_to_delete) ) )
                         else :
                             print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
-                            os.remove(file_to_delete)
+                            ###os.remove(file_to_delete)
                             if is_verbose() :
                                 logging.info ("Deleting [%s]" % (file_to_delete) )
             else :
