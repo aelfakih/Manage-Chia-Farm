@@ -14,13 +14,36 @@ This program helps chia farmers manage the thousands of plots within their farm 
 
 # Installation
 
+Pre-requisites 
+* Python 3.9+
+* Git
+
+Open a terminal in windows and download the utility from Github.com 
+
+`git clone https://github.com/aelfakih/Manage-Chia-Farm`
+
+Change directory into Manage-Chia-Farm
+
+`cd Manage-Chia-Farm`
+
 Load required libraries using the following command
 
 `pip install -r .\requirements.txt`
 
 # Configuration
 
-Open the included config.yaml file and enter the path to chia's config.yaml into the chia_config_file variable. The format is usually something like this (change the USERNAME to match your path):
+Before being able to start using the utility, we need to configure it by editing 
+the config.yaml.
+
+Open the the utility configuraiton file and and enter the path to chia's config.yaml 
+into the chia_config_file variable. (the next command is something that you might use. 
+You can use your favorite editor)
+
+`PS C:\Users\USERNAME\Manage-Chia-Farm> notepad.exe config.yaml`
+
+Then edit the chia_config_file variable. The format is usually something like 
+this (change the USERNAME to match your path):
+
 
 ```
 # location of Chia's configuration file. It is used to navigate the plots directories
@@ -61,3 +84,11 @@ by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm
 
 # How to Support
 XCH: xch13px92qjn4c8kzcdn8k02cvwpe6l97py3vzst8m3h2qnz7wxewmrscxck5d
+
+# Common Issues
+
+* When starting the utility you get errors about path not found
+
+> FileNotFoundError: [WinError 3] The system cannot find the path specified: 'D:\\chia'
+
+This occurs when there are invalid
