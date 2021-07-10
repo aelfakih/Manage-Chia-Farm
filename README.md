@@ -71,12 +71,8 @@ farm by using this utility.  This is what the utility does:
 ![Moving Plots](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png?raw=true)
 
 # How to Support
-XCH: xch13px92qjn4c8kzcdn8k02cvwpe6l97py3vzst8m3h2qnz7wxewmrscxck5d
 
-# Common Issues
+If you enjoy this program and want to part with some Mojos, feel free to send it to 
 
-* When starting the utility you get errors about path not found
+XCH: xch12gp5cmdwlrpdpvza8ttvjeu5ml76ytn7v94ujwzpwwvff6n6h3lsgxn65h
 
-> FileNotFoundError: [WinError 3] The system cannot find the path specified: 'D:\\chia'
-
-This occurs when there are invalid
