@@ -68,6 +68,10 @@ farm by using this utility.  This is what the utility does:
    (while adding a .tmp extension) so that chia does not try to open it.
 1. When it is done copying, it will remove the .tmp file and (delete or rename source)
 
+In the following example you can see that I was importing the plots from **J: drive**, which were
+freshly plotted with madmax, into the farm to folder **e:\AquaBird** .  I elected to keep the source 
+files as .imported (which I manually deleted after the import completed) 
+
 ![Moving Plots](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png?raw=true)
 
 # How to Support
