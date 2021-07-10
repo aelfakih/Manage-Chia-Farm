@@ -1,22 +1,41 @@
+from helpers import *
+
 def initialize_database() :
+    import sqlite3 as sql
     """ Define the Database connection """
     db = sql.connect ( "sinoda.db" )
     with db :
-        db.execute ( """
-             CREATE TABLE if not exists plots (
-                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                 name TEXT,
-                 path TEXT,
-                 drive TEXT,
-                 size FLOAT,
-                 last);
-                 """ )
-        db.execute ( """
-             CREATE TABLE if not exists farm (
-                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                 plot TEXT,
-                 path TEXT,
-                 drive TEXT,
-                 updatedatetime text DEFAULT (strftime('%Y-%m-%d %H:%M:%S:%s','now', 'localtime')));
-                 """ )
+        db.execute ( "CREATE TABLE if not exists plots (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,name TEXT,path TEXT,drive TEXT,size FLOAT, last); " )
+        db.execute ( "CREATE TABLE if not exists farm ( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, plot TEXT, path TEXT, drive TEXT);" )
         db.execute ( "CREATE UNIQUE INDEX if not exists idx_farm_plot ON farm ( plot );" )
+
+def save_plot_directory(dir):
+    import sqlite3 as sql
+    from datetime import datetime
+    import pathlib
+    import logging
+
+    db = sql.connect ( 'sinoda.db' )
+    # Creating a cursor object using the cursor() method
+    c = db.cursor ( )
+    time = datetime.now ( ).strftime ( "%B %d, %Y %I:%M%p" )
+
+    p = pathlib.Path ( dir )
+    parts_length = len ( p.parts )
+    drive = pathlib.Path ( dir ).parts[0]
+    path = []
+
+    if parts_length > 1 :
+        path = pathlib.Path ( dir ).parts[1]
+
+    SQLQ = "REPLACE INTO farm (plot, path, drive) values ('%s','%s','%s')" % (dir , path , drive)
+
+    c.execute ( SQLQ )
+
+    if is_verbose ( ) :
+        logging.info ( SQLQ )
+
+    # Commit your changes in the database
+    db.commit()
+    # Closing the connection
+    db.close ( )
