@@ -65,7 +65,7 @@ def get_chia_farm_plots() :
                 chia_farm.append ( filename )
                 plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
         else:
-            logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" %s (directory))
+            logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
     # sort chia_farm
     chia_farm.sort ( )
     return chia_farm
