@@ -77,6 +77,17 @@ def is_plot_online(plot):
     isdir = os.path.isdir ( plot )
 
     return isdir
+"""
+Retrun free space in GiB
+"""
+def get_free_space_GiB (dir):
+    drive = pathlib.Path ( dir ).parts[0]
+    total , used , free = shutil.disk_usage ( drive )
+    # convert to GiB
+    free = free // (2 ** 30)
+    return free
+
+
 
 """
 Return True or False, based on config.yaml setting

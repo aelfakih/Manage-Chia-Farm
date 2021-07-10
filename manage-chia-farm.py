@@ -185,6 +185,8 @@ only one copy
 """
 def find_duplicate_plots() :
     from PyInquirer import prompt , Separator
+    largest_capacity = 0
+
     # if this is enabled in config then proceed
     if get_config ( 'config.yaml' ).get ( 'check_duplicates_plots' ) :
         print ( "* Checking for duplicate plot filenames ... " , end="" )
@@ -213,16 +215,18 @@ def find_duplicate_plots() :
                 for file in duplicate_plotnames :
                     plot_locations = plot_path[file].split ( "," )
                     count = 0
-                    for dir in plot_locations :
-                        file_to_delete = dir.strip ( ) + '\\' + file
-                        if count == 0 :
-                            count += 1
-                            print ( indent ( "*" , "Keeping [%s]" % (file_to_delete) ) )
-                        else :
-                            print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
-                            ###os.remove(file_to_delete)
-                            if is_verbose() :
-                                logging.info ("Deleting [%s]" % (file_to_delete) )
+                    """ Remove the file where there is a LOT of free space (so we keep the farm plots consolidated) """
+                    for dir in plot_locations:
+                        size = get_free_space_GiB ( dir.strip() )
+                        if size > largest_capacity:
+                            largest_capacity = size
+                            remove_from_drive = dir
+
+                    file_to_delete = remove_from_drive.strip() + '\\' + file
+                    print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
+                    os.remove(file_to_delete)
+                    if is_verbose() :
+                        logging.info ("Deleting [%s]" % (file_to_delete) )
             else :
                 print ( indent ( "*" , "Skipping. No files deleted!" ) )
         else :
@@ -354,7 +358,7 @@ if __name__ == '__main__':
     """
     Set the stage so we can monitor and analyze farm
     """
-    initialize_me ( )
+#    initialize_me ( )
 
     style = get_pyinquirer_style ( )
 
