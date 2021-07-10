@@ -56,14 +56,16 @@ def get_chia_farm_plots() :
     chia_farm = []
     plot_sizes =[]
     plot_dirs = get_plot_directories()
+    ignore_these = ["$RECYCLE.BIN","System Volume Information"]
     """ Scan through the farm to build chia_farm (database) """
     for directory in plot_dirs :
         if os.path.isdir (directory):
             arr = os.listdir( directory )
             for plot in arr :
-                filename = directory + '\\' + plot
-                chia_farm.append ( filename )
-                plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
+                if plot not in ignore_these:
+                    filename = directory + '\\' + plot
+                    chia_farm.append ( filename )
+                    plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
         else:
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
     # sort chia_farm
