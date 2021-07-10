@@ -124,7 +124,7 @@ def get_duplicte_plotnames(plot_dirs) :
                 plot_path[plot] = dir
                 plot_count[plot] = 1
     duplicate_plotnames = ([item for item , count in collections.Counter ( plotnames ).items ( ) if count > 1])
-    return duplicate_plotnames
+    return duplicate_plotnames, plot_path
 
 def find_non_plots() :
     from PyInquirer import prompt , Separator
@@ -186,7 +186,7 @@ def find_duplicate_plots() :
         print ( "* Checking for duplicate plot filenames ... " , end="" )
 
         """ Get the duplicate plotnames """
-        duplicate_plotnames = get_duplicte_plotnames ( get_plot_directories() )
+        duplicate_plotnames, plot_path = get_duplicte_plotnames ( get_plot_directories() )
 
         if duplicate_plotnames :
             number_of_files = len ( duplicate_plotnames )
