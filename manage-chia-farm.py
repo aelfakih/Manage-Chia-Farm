@@ -199,8 +199,7 @@ def find_duplicate_plots() :
             questions = [
                 {
                     'type' : 'confirm' ,
-                    'message' : "Do you want to DELETE DUPLICATE files?" % (
-                        total_size_gb) ,
+                    'message' : "Do you want to DELETE DUPLICATE files?") ,
                     'name' : 'delete_duplicates' ,
                     'default' : False ,
                 }
