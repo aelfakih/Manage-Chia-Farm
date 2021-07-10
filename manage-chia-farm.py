@@ -58,11 +58,14 @@ def get_chia_farm_plots() :
     plot_dirs = get_plot_directories()
     """ Scan through the farm to build chia_farm (database) """
     for directory in plot_dirs :
-        arr = os.listdir( directory )
-        for plot in arr :
-            filename = directory + '\\' + plot
-            chia_farm.append ( filename )
-            plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
+        if os.path.isdir (directory)
+            arr = os.listdir( directory )
+            for plot in arr :
+                filename = directory + '\\' + plot
+                chia_farm.append ( filename )
+                plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
+        else:
+            logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" %s (directory))
     # sort chia_farm
     chia_farm.sort ( )
     return chia_farm
@@ -357,7 +360,7 @@ if __name__ == '__main__':
                 'type' : 'list' ,
                 'name' : 'do' ,
                 'message' : 'Select a farm management action' ,
-                'choices' : [menu_find_non_plots , menu_find_duplicates , menu_evacuate_drives, menu_import_plots , Separator(), "Done"] ,
+                'choices' : [menu_find_non_plots , menu_find_duplicates , menu_import_plots , Separator(), "Done"] ,
 
             }
         ]
