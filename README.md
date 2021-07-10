@@ -59,7 +59,16 @@ To run this program, execute the following command
 
 # Example output
 
-[[https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png|alt=Moving Plots]]
+Running the Import plots option (also as stand alone ) you can move file created in madmax plotter into your 
+farm by using this utility.  This is what the utility does:
+1. After you select the DRIVE to import from, the program looks for .plot files and displays them as a confirmation
+1. If you agree to move them, it asks for destination and asks you if you want to delete the source files 
+   after copying or mark them as imported
+1. Based on your preferences, it will then copy the file from source to destination location 
+   (while adding a .tmp extension) so that chia does not try to open it.
+1. When it is done copying, it will remove the .tmp file and (delete or rename source)
+
+![Moving Plots](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png?raw=true)
 
 # How to Support
 XCH: xch13px92qjn4c8kzcdn8k02cvwpe6l97py3vzst8m3h2qnz7wxewmrscxck5d
