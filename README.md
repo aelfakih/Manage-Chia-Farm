@@ -12,7 +12,7 @@ This program helps chia farmers manage the thousands of plots within their farm 
 > Script was tested with python 3.9 on Windows 10 
 
 
-# Installation
+# 1. Installation
 
 Pre-requisites 
 * Python 3.9+
@@ -30,7 +30,7 @@ Load required libraries using the following command
 
 `pip install -r .\requirements.txt`
 
-# Configuration
+# 2. Configuration
 
 Before being able to start using the utility, we need to configure it by editing 
 the config.yaml.
@@ -51,7 +51,7 @@ chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
 ```
 
 
-# Usage
+# 3. Usage
 To run this program, execute the following command
 
 `python manage-chia-farm.py`

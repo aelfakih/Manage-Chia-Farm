@@ -58,7 +58,7 @@ def get_chia_farm_plots() :
     plot_dirs = get_plot_directories()
     """ Scan through the farm to build chia_farm (database) """
     for directory in plot_dirs :
-        if os.path.isdir (directory)
+        if os.path.isdir (directory):
             arr = os.listdir( directory )
             for plot in arr :
                 filename = directory + '\\' + plot
