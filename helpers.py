@@ -348,7 +348,8 @@ def do_scan_farm():
 
                                 print("")
                             else:
-                                print("Chia binary was not found, please check config.yaml setting")
+                                print("")
+                                print("*** Chia binary was not found, please check config.yaml setting **")
 
                         else:
                             print(indent("*","Plot %s already scanned!" % (plot)))
