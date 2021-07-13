@@ -67,6 +67,11 @@ def get_config(file_path):
 
 #################### Helpers ####################
 
+def get_letter_drive(dir) :
+    drive = pathlib.Path ( dir ).parts[0]
+    return drive
+
+
 """
 Check if the path we got is online. 
 This case happens in windows where drives could get re-ordered
@@ -316,6 +321,7 @@ def do_scan_farm():
                         data = c.fetchall ( )
                         if len(data) == 0:
                             filename = dir + '\\' + plot
+                            letter_drive = get_letter_drive ( dir )
                             plot_size = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
                             print (indent("*","Checking %s:" % (plot)),end="")
                             print(" Size: %s |" % (plot_size),end="")
@@ -328,20 +334,20 @@ def do_scan_farm():
                             if os.path.exists(chia_binary):
                                 output = subprocess.getoutput ('%s plots check -g %s' % (chia_binary, plot) )
                                 if found in output :
-                                    print ( " Valid plot |" ,end="")
-                                    valid="Valid"
+                                    print ( " Valid: Yes |" ,end="")
+                                    valid="Yes"
                                 else:
-                                    print (" Invalid Plot |",end="")
-                                    valid = "In-Valid"
+                                    print (" Valid: No |",end="")
+                                    valid = "No"
 
                                 if is_og in output :
-                                    print ( " NFT",end="" )
+                                    print ( " Type: NFT",end="" )
                                     type="NFT"
                                 else :
-                                    print ( " OG",end="" )
+                                    print ( " Type: OG",end="" )
                                     type="OG"
 
-                                SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , dir, plot_size, type, valid)
+                                SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , letter_drive, plot_size, type, valid)
                                 c.execute ( SQLQ )
 
                                 print("")

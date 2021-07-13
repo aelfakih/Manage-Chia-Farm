@@ -266,7 +266,7 @@ def get_smallest_plot ( ):
     average_size = round ( Average ( get_average_plot_sizes ( plot_dirs ) ) , 2 )
     counter = 0
     for dir in plot_dirs:
-        drive = pathlib.Path(dir).parts[0]
+        drive = get_letter_drive ( dir )
         total, used, free = shutil.disk_usage(drive)
         # convert to GiB
         free = free // (2**30)
@@ -285,6 +285,7 @@ def get_smallest_plot ( ):
     if is_verbose():
         logging.info("Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
     return min_storage_drive, max_plots_to_fit
+
 
 def get_destination_capacity ( dir ):
     plot_dirs = get_plot_directories ( )
