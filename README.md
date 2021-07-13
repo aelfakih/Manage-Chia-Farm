@@ -1,5 +1,12 @@
 ﻿# Manage-Chia-Farm
 This program helps chia farmers manage the thousands of plots within their farm and helps in the following areas:
+  * **Verify Plot Directories and Plots**  This is an exhaustive test to verify all the plots in the farm and learn
+    about your farm to make management easier for larger farms.  Data collected is saved in a sqlite db called 
+    chia-farm-stats.db which is stored locally. The program:
+    * Checks that **directory plots are online** so that farmer can take action.
+    * **Verifies plots are valid** for the installed chia instance.
+    * **Classifies the plots as NFT or OG**.
+    * Saves location and size  
   * Find and remove **non-plot files** --  In each of the farm folders, look for files that do not end with *.plot* 
     extension and bring that to the manager attention.  The manager is then prompted to delete all the offending 
     files to clear space for plots.
@@ -44,12 +51,10 @@ You can use your favorite editor)
 Then edit the chia_config_file variable. The format is usually something like 
 this (change the USERNAME to match your path):
 
-
 ```
 # location of Chia's configuration file. It is used to navigate the plots directories
 chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
 ```
-
 
 # 3. Usage
 To run this program, execute the following command

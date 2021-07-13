@@ -5,8 +5,14 @@ import sys
 import shutil
 import yaml
 import logging
+from database import *
 from PyInquirer import style_from_dict, Token, prompt, Separator
+import sqlite3 as sql
 
+
+def db_connect() :
+    db = sql.connect ( 'chia-farm-stats.db' )
+    return db
 
 # cleanup the cli output to avoid confusion when cleaning space
 def indent(symbol,string):
@@ -14,7 +20,6 @@ def indent(symbol,string):
     space = ' '
     sentence = tab + symbol + space + string
     return(sentence)
-
 
 # Python program to get average of a list
 def Average(lst):
@@ -60,7 +65,6 @@ def get_config(file_path):
     f.close()
     return config
 
-
 #################### Helpers ####################
 
 """
@@ -77,9 +81,8 @@ def is_plot_online(plot):
     isdir = os.path.isdir ( plot )
 
     return isdir
-"""
-Retrun free space in GiB
-"""
+
+""" Retrun free space in GiB """
 def get_free_space_GiB (dir):
     drive = pathlib.Path ( dir ).parts[0]
     total , used , free = shutil.disk_usage ( drive )
@@ -87,12 +90,7 @@ def get_free_space_GiB (dir):
     free = free // (2 ** 30)
     return free
 
-
-
-"""
-Return True or False, based on config.yaml setting
-Given that config.yaml is a file, check for True otherwise return false
-"""
+""" Return True or False for verbose in config.yaml """
 def is_verbose() :
     verbose = get_config ( 'config.yaml' ).get ( 'verbose' )
     if verbose == True:
@@ -100,12 +98,10 @@ def is_verbose() :
     else:
         return False
 
-
 def get_plot_directories():
     import yaml
     config = get_config(get_config('config.yaml').get('chia_config_file'))
     return config.get('harvester').get('plot_directories')
-
 
 def get_pyinquirer_style() :
     style = style_from_dict ( {
@@ -283,3 +279,82 @@ def do_import_file_into_farm(src, destination_folder, action):
 
 
                 print ( f'Done! Copied {f_size} bytes.' )
+
+
+def do_scan_farm():
+    chia_farm = []
+    plot_sizes =[]
+    ignore_these = ["$RECYCLE.BIN","System Volume Information"]
+    db = db_connect ( )
+    c = db.cursor ( )
+
+    print ( "Scanning Chia farm..." )
+    plot_dirs = get_plot_directories ( )
+
+    if is_verbose() :
+        logging.info ( "Scanning Chia farm..." )
+
+    for dir in plot_dirs :
+        print ( "Checking plot directory %s:" % (dir) )
+
+        if os.path.isdir(dir):
+            print(" Valid |",end="")
+            drive = pathlib.Path ( dir ).parts[0]
+            """ Check if the plots defined in the chia config file are online"""
+            if not is_plot_online(dir):
+                logging.error("%s plot is offline" % (dir))
+                ## TO DO , ask if you want to fix chia config file
+                print (" Offline |",end="")
+            else:
+                print ( " Online |",end="")
+                #save_plot_directory ( dir )
+                arr = os.listdir ( dir )
+                print ( " %s plots:" % (len ( arr )))
+                for plot in arr :
+                    if plot not in ignore_these :
+                        c.execute ("SELECT id FROM plots WHERE name = '%s'" % (plot) )
+                        data = c.fetchall ( )
+                        if len(data) == 0:
+                            filename = dir + '\\' + plot
+                            plot_size = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
+                            print (indent("*","Checking %s:" % (plot)),end="")
+                            print(" Size: %s |" % (plot_size),end="")
+
+                            import subprocess
+                            found = "Found 1 valid plots"
+                            is_og = "Pool public key: None"
+                            output=[]
+                            output = subprocess.getoutput (
+                                "C:\\Users\\Admin\\AppData\\Local\\chia-blockchain\\app-1.2.1\\resources\\app.asar.unpacked\\daemon\\chia.exe plots check -g %s" % (plot) )
+                            # print(output)
+                            if found in output :
+                                print ( " Valid plot |" ,end="")
+                                valid="Valid"
+                            else:
+                                print (" Invalid Plot |",end="")
+                                valid = "In-Valid"
+
+                            if is_og in output :
+                                print ( " Portable",end="" )
+                                type="Portable"
+                            else :
+                                print ( " Old Gangster",end="" )
+                                type="OG"
+
+                            SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , dir, plot_size, type, valid)
+                            #print(SQLQ)
+                            c.execute ( SQLQ )
+
+                            print("")
+                        else:
+                            print(indent("*","Plot %s already scanned!" % (plot)))
+                    # Commit your changes in the database
+                    db.commit ( )
+
+
+                print("")
+        else:
+            print ( " Invalid |",end="" )
+            logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
+    # Closing the connection
+    db.close ( )

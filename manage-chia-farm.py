@@ -47,10 +47,9 @@ initialize some of the variables needed in the program. Please do not change
 menu_find_non_plots = "Find non-Plots"
 menu_find_duplicates = "Find Duplicate Plots"
 menu_import_plots = "Import Plots into Farm"
-menu_evacuate_drives = "Evacuate Drives"
+menu_scan_farm = "Verify Plot Directories and Plots"
 
-def get_drives_to_evacuate():
-    print("Work in Progress!")
+
 
 def get_chia_farm_plots() :
     chia_farm = []
@@ -186,55 +185,51 @@ def find_duplicate_plots() :
     from PyInquirer import prompt , Separator
     largest_capacity = 0
 
-    # if this is enabled in config then proceed
-    if get_config ( 'config.yaml' ).get ( 'check_duplicates_plots' ) :
-        print ( "* Checking for duplicate plot filenames ... " , end="" )
+    print ( "* Checking for duplicate plot filenames ... " , end="" )
 
-        """ Get the duplicate plotnames """
-        duplicate_plotnames, plot_path = get_duplicte_plotnames ( get_plot_directories() )
+    """ Get the duplicate plotnames """
+    duplicate_plotnames , plot_path = get_duplicte_plotnames ( get_plot_directories ( ) )
 
-        if duplicate_plotnames :
-            number_of_files = len ( duplicate_plotnames )
-            print ( "[NOK]" )
-            print ( indent ( "*" , "WARNING! Found %s plots with multiple copies" % (number_of_files) ) )
+    if duplicate_plotnames :
+        number_of_files = len ( duplicate_plotnames )
+        print ( "[NOK]" )
+        print ( indent ( "*" , "WARNING! Found %s plots with multiple copies" % (number_of_files) ) )
+        for file in duplicate_plotnames :
+            print ( indent ( ">" , "%s  (%s)" % (file , plot_path[file]) ) )
+
+        """ Get feedback from farmer (default is do not delete) """
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'message' : "Do you want to DELETE DUPLICATE files?" ,
+                'name' : 'delete_duplicates' ,
+                'default' : False ,
+            }
+        ]
+        answers = prompt ( questions )
+        if answers['delete_duplicates'] :
             for file in duplicate_plotnames :
-                print ( indent ( ">" , "%s  (%s)" % (file , plot_path[file]) ) )
+                plot_locations = plot_path[file].split ( "," )
+                count = 0
+                """ Remove the file where there is a LOT of free space (so we keep the farm plots consolidated) """
+                for dir in plot_locations :
+                    size = get_free_space_GiB ( dir.strip ( ) )
+                    if size > largest_capacity :
+                        largest_capacity = size
+                        remove_from_drive = dir
 
-            """ Get feedback from farmer (default is do not delete) """
-            questions = [
-                {
-                    'type' : 'confirm' ,
-                    'message' : "Do you want to DELETE DUPLICATE files?",
-                    'name' : 'delete_duplicates' ,
-                    'default' : False ,
-                }
-            ]
-            answers = prompt ( questions )
-            if answers['delete_duplicates'] :
-                for file in duplicate_plotnames :
-                    plot_locations = plot_path[file].split ( "," )
-                    count = 0
-                    """ Remove the file where there is a LOT of free space (so we keep the farm plots consolidated) """
-                    for dir in plot_locations:
-                        size = get_free_space_GiB ( dir.strip() )
-                        if size > largest_capacity:
-                            largest_capacity = size
-                            remove_from_drive = dir
-
-                    file_to_delete = remove_from_drive.strip() + '\\' + file
-                    print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
-                    os.remove(file_to_delete)
-                    if is_verbose() :
-                        logging.info ("Deleting [%s]" % (file_to_delete) )
-            else :
-                print ( indent ( "*" , "Skipping. No files deleted!" ) )
+                file_to_delete = remove_from_drive.strip ( ) + '\\' + file
+                print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
+                os.remove ( file_to_delete )
+                if is_verbose ( ) :
+                    logging.info ( "Deleting [%s]" % (file_to_delete) )
         else :
-            print ( "[OK] None found!" )
-            if is_verbose() :
-                logging.info ( "No duplicate names files found!" )
+            print ( indent ( "*" , "Skipping. No files deleted!" ) )
     else :
-        if is_verbose() :
-            logging.info( "Skipped checking for duplicate plot filenames per config.yaml" )
+        print ( "[OK] None found!" )
+        if is_verbose ( ) :
+            logging.info ( "No duplicate names files found!" )
+
 
 def evacuate_plots() :
     plot_dirs = get_plot_directories ( )
@@ -249,7 +244,7 @@ def evacuate_plots() :
         logging.info( "Using Average plot size of %s GiB to fit plots in available farm space" % (average_size) )
     # loop while defrag
     iterate = len ( plot_dirs )
-    while (iterate > 0) and (get_config ( 'config.yaml' ).get ( 'defragment_the_farm' )) :
+    while (iterate > 0) :
         plot_dirs = get_plot_directories ( )
         iterate , to_plot , from_plot , plots_to_move = defrag_plots ( plot_dirs , average_size )
         print ( "%s From: %s >> %s ( %s plots)" % (iterate , from_plot , to_plot , plots_to_move) )
@@ -331,7 +326,7 @@ def initialize_me() :
     initialize_database ( )
 
     """ Scan the Chia Plot Directories """
-    scan_plot_directories ( )
+    #scan_plot_directories ( )
     """ Get the plots that the Chia farm is farming """
     plot_dirs = get_plot_directories ( )
     if is_verbose ( ) :
@@ -339,7 +334,7 @@ def initialize_me() :
     """ Get the plots available in the farm """
     chia_farm = get_chia_farm_plots ( )
     number_of_plots = len ( chia_farm )
-    print ( "* Scanning your farm! Found" , number_of_plots , "plots listed!\n" )
+    print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted to this machine!\n" )
     if is_verbose ( ) :
         logging.info ( "Found %s files in farm" % (number_of_plots) )
 
@@ -357,7 +352,7 @@ if __name__ == '__main__':
     """
     Set the stage so we can monitor and analyze farm
     """
-#    initialize_me ( )
+    initialize_me ( )
 
     style = get_pyinquirer_style ( )
 
@@ -369,7 +364,7 @@ if __name__ == '__main__':
                 'type' : 'list' ,
                 'name' : 'do' ,
                 'message' : 'Select a farm management action' ,
-                'choices' : [menu_find_non_plots , menu_find_duplicates , menu_import_plots , Separator(), "Done"] ,
+                'choices' : [menu_scan_farm, menu_find_non_plots , menu_find_duplicates , menu_import_plots , Separator(), "Done"] ,
 
             }
         ]
@@ -383,8 +378,8 @@ if __name__ == '__main__':
             find_duplicate_plots ( )
         elif answers['do'] == menu_import_plots:
             do_import_plots(style)
-        elif answers['do'] == menu_evacuate_drives:
-            get_drives_to_evacuate()
+        elif answers['do'] == menu_scan_farm:
+            do_scan_farm()
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")
