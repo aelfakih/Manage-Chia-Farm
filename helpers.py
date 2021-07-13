@@ -327,7 +327,6 @@ def do_scan_farm():
                             chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
                             if os.path.exists(chia_binary):
                                 output = subprocess.getoutput ('%s plots check -g %s' % (chia_binary, plot) )
-                                # print(output)
                                 if found in output :
                                     print ( " Valid plot |" ,end="")
                                     valid="Valid"
@@ -336,15 +335,14 @@ def do_scan_farm():
                                     valid = "In-Valid"
 
                                 if is_og in output :
-                                    print ( " Portable",end="" )
-                                    type="Portable"
+                                    print ( " NFT",end="" )
+                                    type="NFT"
                                 else :
-                                    print ( " Old Gangster",end="" )
+                                    print ( " OG",end="" )
                                     type="OG"
 
                                 SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , dir, plot_size, type, valid)
-                                #print(SQLQ)
-                                #c.execute ( SQLQ )
+                                c.execute ( SQLQ )
 
                                 print("")
                             else:

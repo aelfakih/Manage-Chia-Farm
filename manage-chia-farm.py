@@ -364,7 +364,7 @@ if __name__ == '__main__':
                 'type' : 'list' ,
                 'name' : 'do' ,
                 'message' : 'Select a farm management action' ,
-                'choices' : [menu_scan_farm, menu_find_non_plots , menu_find_duplicates , menu_import_plots , Separator(), "Done"] ,
+                'choices' : [ menu_find_non_plots , menu_find_duplicates , menu_scan_farm, menu_import_plots , Separator(), "Done"] ,
 
             }
         ]
