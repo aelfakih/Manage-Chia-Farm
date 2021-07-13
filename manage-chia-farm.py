@@ -137,48 +137,45 @@ def find_non_plots() :
     total_size_gb = 0
     chia_farm = get_chia_farm_plots ( )
     """ [1] Find and remove NON-PLOTS """
-    if get_config ( 'config.yaml' ).get ( 'check_for_non_plots' ) :
 
-        print("* Checking for non-plots files (without a '.plot' extension) ... ", end="")
+    print ( "* Checking for non-plots files (without a '.plot' extension) ... " , end="" )
 
-        """ Get the non plots in the farm """
-        non_plot_list = get_non_plots_in_farm ( chia_farm )
+    """ Get the non plots in the farm """
+    non_plot_list = get_non_plots_in_farm ( chia_farm )
 
-        if non_plot_list :
-            number_of_files = len ( non_plot_list )
-            print ( "[NOK]" )
-            print ( indent ( "*" , "WARNING! Found %s non-plot files in farm." % (number_of_files) ) )
+    if non_plot_list :
+        number_of_files = len ( non_plot_list )
+        print ( "[NOK]" )
+        print ( indent ( "*" , "WARNING! Found %s non-plot files in farm." % (number_of_files) ) )
+        for file in non_plot_list :
+            size_gb = round ( os.path.getsize ( file ) / (2 ** 30) , 2 )
+            total_size_gb += size_gb
+            print ( indent ( ">" , "%s (%s GiB)" % (file , size_gb) ) )
+
+        """ Get feedback from farmer (default is do not delete) """
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'message' : "Do you want to DELETE NON-PLOT files and save %s GB of storage space?" % (total_size_gb) ,
+                'name' : 'delete_non_plots' ,
+                'default' : False ,
+            }
+        ]
+        answers = prompt ( questions )
+        if answers['delete_non_plots'] :
             for file in non_plot_list :
-                size_gb = round ( os.path.getsize ( file ) / (2 ** 30) , 2 )
-                total_size_gb += size_gb
-                print ( indent ( ">" , "%s (%s GiB)" % (file , size_gb) ) )
-
-            """ Get feedback from farmer (default is do not delete) """
-            questions = [
-                {
-                    'type' : 'confirm' ,
-                    'message' : "Do you want to DELETE NON-PLOT files and save %s GB of storage space?" % ( total_size_gb) ,
-                    'name' : 'delete_non_plots' ,
-                    'default' : False ,
-                }
-            ]
-            answers = prompt ( questions )
-            if answers['delete_non_plots'] :
-                for file in non_plot_list :
-                    if os.path.isfile ( file ) :
-                        os.remove ( file )
-                        print ( indent ( "*" , "Deleting:  %s" % file ) )
-                        if is_verbose():
-                            logging.info ( "Deleting:  %s" % file )
-            else :
-                print ( indent ( "*" , "Skipping. No files deleted!" ) )
+                if os.path.isfile ( file ) :
+                    os.remove ( file )
+                    print ( indent ( "*" , "Deleting:  %s" % file ) )
+                    if is_verbose ( ) :
+                        logging.info ( "Deleting:  %s" % file )
         else :
-            print ( "[OK] None found!" )
-            if is_verbose():
-                logging.info ( "No non-plots files found!" )
+            print ( indent ( "*" , "Skipping. No files deleted!" ) )
     else :
-        if is_verbose():
-            logging.info( "Skipped checking for non-plots as configured in config.yaml" )
+        print ( "[OK] None found!" )
+        if is_verbose ( ) :
+            logging.info ( "No non-plots files found!" )
+
 
 """ 
 Find plots with the same name in the farm, 
