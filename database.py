@@ -8,7 +8,7 @@ def initialize_database() :
         db.execute ( "CREATE TABLE if not exists plots (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, path TEXT,drive TEXT,size FLOAT, type TEXT, valid TEXT); " )
         db.execute ( "CREATE TABLE if not exists farm ( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, plot TEXT, path TEXT, drive TEXT);" )
         db.execute ( "CREATE UNIQUE INDEX if not exists idx_farm_plot ON farm ( plot );" )
-        #db.execute ( "CREATE UNIQUE INDEX if not exists idx_plots_name ON plots ( name );" )
+        db.execute ( "CREATE UNIQUE INDEX if not exists idx_plots_name ON plots ( name );" )
 
 
 def save_plot_directory(dir):

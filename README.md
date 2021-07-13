@@ -63,7 +63,7 @@ To run this program, execute the following command
 
 
 # Example output
-
+## Import Plots into Farm
 Running the Import plots option (also as stand alone ) you can move file created in madmax plotter into your 
 farm by using this utility.  This is what the utility does:
 1. After you select the DRIVE to import from, the program looks for .plot files and displays them as a confirmation
@@ -77,7 +77,19 @@ In the following example you can see that I was importing the plots from **J: dr
 freshly plotted with madmax, into the farm to folder **e:\AquaBird** .  I elected to keep the source 
 files as .imported (which I manually deleted after the import completed) 
 
-![Moving Plots](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png?raw=true)
+![Import Plots into Farm](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png?raw=true)
+
+## Verify Plot Directories and Plots
+ 
+This option take a long time to run since it will execute the chia client to verify the validity of the plot.
+The data from the scan is stored in a local sqlite database called **chia-farm-stats.db** and you can browse it
+using any sqlite capable application. Try (https://sqlitebrowser.org/)
+
+![Verify Plot Directories and Plots](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/verify_plot_directories_and_plots.png?raw=true)
+
+The database will be used in future updates to quickly find information about any plot in your farm and improve
+the overall speed of managing a large chia farm.
+
 
 # How to Support
 
