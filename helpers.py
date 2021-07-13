@@ -358,7 +358,7 @@ def do_scan_farm():
 
                 print("")
         else:
-            print ( " Invalid |",end="" )
+            print ( " Invalid: %s (in config.yaml) is not a valid plot directory.")
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
     # Closing the connection
     db.close ( )
