@@ -324,28 +324,32 @@ def do_scan_farm():
                             found = "Found 1 valid plots"
                             is_og = "Pool public key: None"
                             output=[]
-                            output = subprocess.getoutput (
-                                "C:\\Users\\Admin\\AppData\\Local\\chia-blockchain\\app-1.2.1\\resources\\app.asar.unpacked\\daemon\\chia.exe plots check -g %s" % (plot) )
-                            # print(output)
-                            if found in output :
-                                print ( " Valid plot |" ,end="")
-                                valid="Valid"
+                            chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+                            if os.path.exists(chia_binary):
+                                output = subprocess.getoutput ('%s plots check -g %s' % (chia_binary, plot) )
+                                # print(output)
+                                if found in output :
+                                    print ( " Valid plot |" ,end="")
+                                    valid="Valid"
+                                else:
+                                    print (" Invalid Plot |",end="")
+                                    valid = "In-Valid"
+
+                                if is_og in output :
+                                    print ( " Portable",end="" )
+                                    type="Portable"
+                                else :
+                                    print ( " Old Gangster",end="" )
+                                    type="OG"
+
+                                SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , dir, plot_size, type, valid)
+                                #print(SQLQ)
+                                #c.execute ( SQLQ )
+
+                                print("")
                             else:
-                                print (" Invalid Plot |",end="")
-                                valid = "In-Valid"
+                                print("Chia binary was not found, please check config.yaml setting")
 
-                            if is_og in output :
-                                print ( " Portable",end="" )
-                                type="Portable"
-                            else :
-                                print ( " Old Gangster",end="" )
-                                type="OG"
-
-                            SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , dir, plot_size, type, valid)
-                            #print(SQLQ)
-                            c.execute ( SQLQ )
-
-                            print("")
                         else:
                             print(indent("*","Plot %s already scanned!" % (plot)))
                     # Commit your changes in the database
