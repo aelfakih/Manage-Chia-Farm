@@ -287,6 +287,12 @@ def do_import_file_into_farm(src, destination_folder, action):
                 print ( f'Done! Copied {f_size} bytes.' )
 
 
+def get_plots_in_list( list ) :
+    # find files that have .plot extension
+    p = re.compile ( ".*\.plot$" )
+    plot_list = list ( filter ( p.match , list ) )
+    return plot_list
+
 def do_scan_farm():
     from tqdm import tqdm , trange
     chia_farm = []
