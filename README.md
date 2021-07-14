@@ -18,6 +18,13 @@ This program helps chia farmers manage the thousands of plots within their farm 
 
 > Script was tested with python 3.9 on Windows 10 
 
+# Upgrading from previous versions
+
+If you installed the project as described below, you can get the latest code changes by 
+executing the following command in the Manage-Chia-Farm directory
+
+`git pull origin master`
+
 
 # 1. Installation
 
