@@ -305,15 +305,13 @@ def do_scan_farm():
         print ( "* Checking plot directory %s: " % (dir), end="" )
 
         if os.path.isdir(dir):
+            letter_drive = get_letter_drive ( dir )
             print(" Directory: Valid |",end="")
-            SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
-                plot , dir , letter_drive , plot_size , type , valid)
+            SQLQ = "REPLACE INTO plot_directory (path, drive, type, valid) values ('%s','%s','%s','%s')" % (dir , letter_drive , "local" , "Yes")
             c.execute ( SQLQ )
-            drive = pathlib.Path ( dir ).parts[0]
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
                 logging.error("%s plot is offline" % (dir))
-                ## TO DO , ask if you want to fix chia config file
                 print (" Online: No |",end="")
             else:
                 print (" Online: Yes |",end="")
@@ -328,7 +326,6 @@ def do_scan_farm():
                             data = c.fetchall ( )
                             if len ( data ) == 0 :
                                 filename = dir + '\\' + plot
-                                letter_drive = get_letter_drive ( dir )
                                 plot_size = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
                                 logging.info ( "Checking %s:" % (plot) )
                                 logging.info ( " Size: %s |" % (plot_size) )
@@ -370,7 +367,13 @@ def do_scan_farm():
 
 
         else:
+            ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
+            SQLQ = "REPLACE INTO plot_directory (path, drive, type, valid) values ('%s','%s','%s','%s')" % (dir , letter_drive , "local" , "No")
+            c.execute ( SQLQ )
+
+    # Commit your changes in the database
+    db.commit ( )
     # Closing the connection
     db.close ( )
