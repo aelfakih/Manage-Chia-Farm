@@ -306,6 +306,9 @@ def do_scan_farm():
 
         if os.path.isdir(dir):
             print(" Directory: Valid |",end="")
+            SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
+                plot , dir , letter_drive , plot_size , type , valid)
+            c.execute ( SQLQ )
             drive = pathlib.Path ( dir ).parts[0]
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
@@ -314,7 +317,6 @@ def do_scan_farm():
                 print (" Online: No |",end="")
             else:
                 print (" Online: Yes |",end="")
-                #save_plot_directory ( dir )
                 arr = os.listdir ( dir )
                 plots_at_location = len(arr)
                 print ( " # plots %s | Scanning Plots..." % (plots_at_location))
@@ -322,7 +324,7 @@ def do_scan_farm():
                     for plot in arr :
                         pbar.update ( 1 )
                         if plot not in ignore_these :
-                            c.execute ( "SELECT id FROM plots WHERE name = '%s'" % (plot) )
+                            c.execute ( "SELECT id FROM plots WHERE name = '%s' and path='%s'" % (plot,dir) )
                             data = c.fetchall ( )
                             if len ( data ) == 0 :
                                 filename = dir + '\\' + plot

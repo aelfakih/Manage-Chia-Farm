@@ -80,24 +80,6 @@ def get_average_plot_sizes( plot_dirs ) :
             plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
     return plot_sizes
 
-def scan_plot_directories ():
-
-    plot_dirs = get_plot_directories ( )
-
-    if is_verbose() :
-        logging.info ( "Loading chia plot paths into DB" )
-
-    for dir in plot_dirs :
-        drive = pathlib.Path ( dir ).parts[0]
-        """ Check if the plots defined in the chia config file are online"""
-        if not is_plot_online(drive):
-            logging.error("%s plot is offline" % (dir))
-            print ("! %s plot is Offline!" % (dir))
-        else:
-            save_plot_directory ( dir )
-
-
-
 def get_non_plots_in_farm( chia_farm ) :
     # find files that have .plot extension
     p = re.compile ( ".*\.plot$" )
@@ -254,7 +236,7 @@ def print_top_menu() :
     clear = lambda : os.system ( 'cls' )
     clear ( )
     print (
-        'Manage-Chia-Farm | checks that plots are not duplicated, cleans junk files and reorganizes plots to maximize farming space' )
+        'Manage-Chia-Farm | Manage your Chia farm like a Pro' )
     print ( 'by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm\n' )
 
 
@@ -326,8 +308,6 @@ def initialize_me() :
     """ Set Up the SQLite database """
     initialize_database ( )
 
-    """ Scan the Chia Plot Directories """
-    #scan_plot_directories ( )
     """ Get the plots that the Chia farm is farming """
     plot_dirs = get_plot_directories ( )
     if is_verbose ( ) :
