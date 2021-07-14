@@ -4,6 +4,7 @@ import re
 import sys
 import shutil
 import yaml
+from tqdm import tqdm, trange
 import logging
 from database import *
 from PyInquirer import style_from_dict, Token, prompt, Separator
@@ -287,6 +288,7 @@ def do_import_file_into_farm(src, destination_folder, action):
 
 
 def do_scan_farm():
+    from tqdm import tqdm , trange
     chia_farm = []
     plot_sizes =[]
     ignore_these = ["$RECYCLE.BIN","System Volume Information"]
@@ -300,70 +302,73 @@ def do_scan_farm():
         logging.info ( "Scanning Chia farm..." )
 
     for dir in plot_dirs :
-        print ( "Checking plot directory %s:" % (dir) )
+        print ( "* Checking plot directory %s: " % (dir), end="" )
 
         if os.path.isdir(dir):
-            print(" Valid |",end="")
+            print(" Directory: Valid |",end="")
             drive = pathlib.Path ( dir ).parts[0]
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
                 logging.error("%s plot is offline" % (dir))
                 ## TO DO , ask if you want to fix chia config file
-                print (" Offline |",end="")
+                print (" Online: No |",end="")
             else:
-                print ( " Online |",end="")
+                print (" Online: Yes |",end="")
                 #save_plot_directory ( dir )
                 arr = os.listdir ( dir )
-                print ( " %s plots:" % (len ( arr )))
-                for plot in arr :
-                    if plot not in ignore_these :
-                        c.execute ("SELECT id FROM plots WHERE name = '%s'" % (plot) )
-                        data = c.fetchall ( )
-                        if len(data) == 0:
-                            filename = dir + '\\' + plot
-                            letter_drive = get_letter_drive ( dir )
-                            plot_size = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
-                            print (indent("*","Checking %s:" % (plot)),end="")
-                            print(" Size: %s |" % (plot_size),end="")
+                plots_at_location = len(arr)
+                print ( " # plots %s | Scanning Plots..." % (plots_at_location))
+                with tqdm ( total=plots_at_location ) as pbar :
+                    for plot in arr :
+                        pbar.update ( 1 )
+                        if plot not in ignore_these :
+                            c.execute ( "SELECT id FROM plots WHERE name = '%s'" % (plot) )
+                            data = c.fetchall ( )
+                            if len ( data ) == 0 :
+                                filename = dir + '\\' + plot
+                                letter_drive = get_letter_drive ( dir )
+                                plot_size = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
+                                logging.info ( "Checking %s:" % (plot) )
+                                logging.info ( " Size: %s |" % (plot_size) )
 
-                            import subprocess
-                            found = "Found 1 valid plots"
-                            is_og = "Pool public key: None"
-                            output=[]
-                            chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
-                            if os.path.exists(chia_binary):
-                                output = subprocess.getoutput ('%s plots check -g %s' % (chia_binary, plot) )
-                                if found in output :
-                                    print ( " Valid: Yes |" ,end="")
-                                    valid="Yes"
-                                else:
-                                    print (" Valid: No |",end="")
-                                    valid = "No"
+                                import subprocess
+                                found = "Found 1 valid plots"
+                                is_og = "Pool public key: None"
+                                output = []
+                                chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+                                if os.path.exists ( chia_binary ) :
+                                    output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
+                                    if found in output :
+                                        logging.info ( "Plot Valid: Yes" )
+                                        valid = "Yes"
+                                    else :
+                                        logging.info ( " Plot Valid: No" )
+                                        valid = "No"
 
-                                if is_og in output :
-                                    print ( " Type: NFT",end="" )
-                                    type="NFT"
+                                    if is_og in output :
+                                        logging.info ( " Plot Type: NFT" )
+                                        type = "NFT"
+                                    else :
+                                        logging.info ( " Plot Type: OG" )
+                                        type = "OG"
+
+                                    SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
+                                        plot , dir , letter_drive , plot_size , type , valid)
+                                    c.execute ( SQLQ )
+
                                 else :
-                                    print ( " Type: OG",end="" )
-                                    type="OG"
+                                    logging.error ( "Chia binary was not found, please check config.yaml setting **" )
 
-                                SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (plot , dir , letter_drive, plot_size, type, valid)
-                                c.execute ( SQLQ )
-
-                                print("")
-                            else:
-                                print("")
-                                print("*** Chia binary was not found, please check config.yaml setting **")
-
-                        else:
-                            print(indent("*","Plot %s already scanned!" % (plot)))
-                    # Commit your changes in the database
-                    db.commit ( )
+                            else :
+                                logging.info ( "Plot %s has been previously scanned!" % (plot) )
+                        # Commit your changes in the database
+                        db.commit ( )
 
 
-                print("")
+
+
         else:
-            print ( " Invalid: %s (in config.yaml) is not a valid plot directory." % (dir))
+            print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
     # Closing the connection
     db.close ( )

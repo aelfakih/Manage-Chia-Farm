@@ -344,6 +344,11 @@ def initialize_me() :
 
 if __name__ == '__main__':
 
+    chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+    if not os.path.exists ( chia_binary ) :
+        print("Error: %s (chia_binary) is not found. Edit config.yaml" % (chia_binary))
+        exit()
+
     print_top_menu()
     if is_verbose():
         logging.info("Program: Started")
