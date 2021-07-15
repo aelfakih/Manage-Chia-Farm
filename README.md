@@ -21,10 +21,15 @@ This program helps chia farmers manage the thousands of plots within their farm 
 
 ## Supported Volume mounts
 
-manage-chia-farm can detect:
+manage-chia-farm can detect these types of drive mounts and return space statistics:
 * **Letter mounted drives** (i.e. D:\, E:\)
 * **Folder mounted drives**  In windows you can mount iscsi and usb drives as directories such
-  as *c:\mnt\drive1* this allows the user not be limited to D-Z drive naming.  
+  as *c:\mnt\drive1* this allows the user not be limited to D-Z drive naming.
+* **Network drives** (i.e. //server/mount_point)  NAS mounted drives (NFS, Samba, etc..) can be recognized 
+  an scanned for plots.
+
+![Three mount styles](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/drive_mount_styles.png?raw=true)
+
 
 # Upgrading from previous versions
 
