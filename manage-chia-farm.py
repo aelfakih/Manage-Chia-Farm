@@ -81,11 +81,24 @@ def get_average_plot_sizes( plot_dirs ) :
     return plot_sizes
 
 def get_non_plots_in_farm( chia_farm ) :
+    plot_list =[]
+    chia_list =[]
+
     # find files that have .plot extension
     p = re.compile ( ".*\.plot$" )
-    plot_list = list ( filter ( p.match , chia_farm ) )
+
+    for item in chia_farm:
+        if os.path.isfile(item):
+            chia_list.append(item)
+
     # find symmetric difference.
-    non_plot_list = set ( plot_list ).symmetric_difference ( chia_farm )
+    filter_list = list ( filter ( p.match , chia_list ) )
+
+    for item in filter_list:
+        if os.path.isfile(item):
+            plot_list.append(item)
+    # find symmetric difference.
+    non_plot_list = set ( plot_list ).symmetric_difference ( chia_list )
     return non_plot_list
 
 def get_duplicte_plotnames(plot_dirs) :
@@ -338,15 +351,19 @@ if __name__ == '__main__':
 
     initialize_me ( )
 
-    """ add menu options when errors are found """
-    issues_found = do_check_for_issues()
-    if issues_found > 0 :
-        menu_options = [Separator(),menu_resolve_issues,Separator(),menu_find_non_plots , menu_find_duplicates , menu_scan_farm, menu_import_plots , Separator(), "Done"]
-    else:
-        menu_options = [Separator(), menu_find_non_plots , menu_find_duplicates , menu_scan_farm, menu_import_plots , Separator(), "Done"]
 
     loop=True
     while loop:
+
+        """ add menu options when errors are found """
+        issues_found = do_check_for_issues ( )
+        if issues_found > 0 :
+            menu_resolve_issues = "Resolve Issues Found (%s)" % (issues_found)
+            menu_options = [Separator ( ) , menu_resolve_issues , Separator ( ) , menu_find_non_plots ,
+                            menu_find_duplicates , menu_scan_farm , menu_import_plots , Separator ( ) , "Done"]
+        else :
+            menu_options = [Separator ( ) , menu_find_non_plots , menu_find_duplicates , menu_scan_farm ,
+                            menu_import_plots , Separator ( ) , "Done"]
 
         questions = [
             {
@@ -370,8 +387,7 @@ if __name__ == '__main__':
         elif answers['do'] == menu_scan_farm:
             do_scan_farm()
         elif answers['do'] == menu_resolve_issues:
-            #do_resolve_issues()
-            print("Work in progress!")
+            do_resolve_issues()
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")

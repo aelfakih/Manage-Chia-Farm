@@ -1,3 +1,4 @@
+import subprocess
 import pathlib
 import os
 import re
@@ -9,7 +10,6 @@ import logging
 from database import *
 from PyInquirer import style_from_dict, Token, prompt, Separator
 import sqlite3 as sql
-
 
 def db_connect() :
     db = sql.connect ( 'db\chia-farm-stats.db' )
@@ -343,7 +343,7 @@ def do_scan_farm():
                 with tqdm ( total=plots_at_location ) as pbar :
                     for plot in arr :
                         pbar.update ( 1 )
-                        if plot not in ignore_these :
+                        if (plot not in ignore_these) and (os.path.isfile(plot)) :
                             c.execute ( "SELECT id FROM plots WHERE name = '%s' and path='%s'" % (plot,dir) )
                             data = c.fetchall ( )
                             if len ( data ) == 0 :
@@ -352,11 +352,10 @@ def do_scan_farm():
                                 logging.info ( "Checking %s:" % (plot) )
                                 logging.info ( " Size: %s |" % (plot_size) )
 
-                                import subprocess
                                 found = "Found 1 valid plots"
                                 is_og = "Pool public key: None"
                                 output = []
-                                chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+                                chia_binary = get_chia_binary ( )
                                 if os.path.exists ( chia_binary ) :
                                     output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
                                     if found in output :
@@ -396,6 +395,12 @@ def do_scan_farm():
     # Closing the connection
     db.close ( )
 
+
+def get_chia_binary() :
+    chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+    return chia_binary
+
+
 def do_check_for_issues():
     issues = 0
     db = db_connect ( )
@@ -406,7 +411,7 @@ def do_check_for_issues():
     c.execute ( SQLQ )
     data = c.fetchall ( )
     if len ( data ) > 0 :
-        logging.error ("Found %s invalid plot-directory definitions in chia's config.yaml file")
+        logging.error ("Found %s invalid plot-directory definitions in chia's config.yaml file" % (len ( data )))
         issues += len(data)
 
     """ Check fir invalid plots"""
@@ -414,7 +419,77 @@ def do_check_for_issues():
     c.execute ( SQLQ )
     data = c.fetchall ( )
     if len ( data ) > 0 :
-        logging.error ("Found %s invalid plots in farm")
+        logging.error ("Found %s invalid plots in farm" % (len ( data )))
         issues += len(data)
-    print("! Found %s issues in farm configuration" % (issues))
     return issues
+
+def do_resolve_issues():
+    issues = 0
+    db = db_connect ( )
+    c = db.cursor ( )
+    style = get_pyinquirer_style ( )
+
+    """ Check for invalid plots"""
+    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'No'"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    if len ( data ) > 0 :
+        print ("* Plot-directory definitions in chia's config.yaml (%s issue found)" % (len ( data )))
+
+        for line in data:
+            print ("> %s is NOT a valid plot directory" % (line[1]))
+
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'name' : 'do' ,
+                'message' : 'Do you want to remove entries from your chia\'s configuration?' ,
+                'default' : False ,
+
+            }
+        ]
+        answers = prompt ( questions , style=style )
+        if answers['do']:
+            print ("* Updating chia plot configuration to remove invalid directories...")
+            chia_binary = get_chia_binary ( )
+            for line in data :
+                path = line[1]
+                output = subprocess.getoutput ( '%s plots remove -d %s' % (chia_binary , path) )
+                SQLQ = "DELETE FROM plot_directory WHERE ID = %s" % (line[0])
+                c.execute ( SQLQ )
+            db.commit()
+        else:
+            print ( "* No changes made to chia configuration" )
+
+    """ Check fir invalid plots"""
+    SQLQ = "SELECT * FROM plots WHERE valid = 'No'"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    if len ( data ) > 0 :
+        print ("* Invalid plots found in farm (%s)" % (len ( data )))
+
+        for line in data:
+            print ( "> %s\%s is NOT a valid chia plot file" % (line[2],line[1]) )
+
+            questions = [
+                {
+                    'type' : 'confirm' ,
+                    'name' : 'do' ,
+                    'message' : 'Do you want to DELETE these files?' ,
+                    'default' : False ,
+
+                }
+            ]
+            answers = prompt ( questions , style=style )
+            if answers['do'] :
+                print ( "* Deleting invalid files plot files..." )
+                for line in data :
+                    path = line[2]
+                    file = line[1]
+                    filename = path + file
+                    os.remove(filename)
+                    SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
+                    c.execute ( SQLQ )
+                db.commit ( )
+            else :
+                print ( "* No changes made to chia configuration" )
