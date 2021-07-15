@@ -321,9 +321,9 @@ def do_scan_farm():
 
     for dir in plot_dirs :
         print ( "* Checking plot directory %s: " % (dir), end="" )
+        mount_point = find_mount_point ( dir )
 
         if os.path.isdir(dir):
-            mount_point = find_mount_point(dir)
             mount_total , mount_used , mount_free = shutil.disk_usage ( mount_point )
             mount_total = bytes_to_gib(mount_total)
             mount_used = bytes_to_gib(mount_used)

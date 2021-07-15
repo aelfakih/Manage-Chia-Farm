@@ -1,4 +1,5 @@
 ﻿# Manage-Chia-Farm
+## Features
 This program helps chia farmers manage the thousands of plots within their farm and helps in the following areas:
   * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
     extension and prompt manager to delete the files to clear space.
@@ -17,6 +18,13 @@ This program helps chia farmers manage the thousands of plots within their farm 
     removing of files so that farming is not interrupted.   
 
 > Script was tested with python 3.9 on Windows 10 
+
+## Supported Volume mounts
+
+manage-chia-farm can detect:
+* **Letter mounted drives** (i.e. D:\, E:\)
+* **Folder mounted drives**  In windows you can mount iscsi and usb drives as directories such
+  as *c:\mnt\drive1* this allows the user not be limited to D-Z drive naming.  
 
 # Upgrading from previous versions
 
