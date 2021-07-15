@@ -321,9 +321,9 @@ def do_scan_farm():
 
     for dir in plot_dirs :
         print ( "* Checking plot directory %s: " % (dir), end="" )
-        mount_point = find_mount_point ( dir )
 
         if os.path.isdir(dir):
+            mount_point = find_mount_point(dir)
             mount_total , mount_used , mount_free = shutil.disk_usage ( mount_point )
             mount_total = bytes_to_gib(mount_total)
             mount_used = bytes_to_gib(mount_used)
@@ -388,7 +388,7 @@ def do_scan_farm():
             ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
-            SQLQ = "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , mount_point , 0, 0,0, "No")
+            SQLQ = "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No")
             c.execute ( SQLQ )
 
     # Commit your changes in the database
