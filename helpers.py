@@ -12,7 +12,7 @@ import sqlite3 as sql
 
 
 def db_connect() :
-    db = sql.connect ( 'chia-farm-stats.db' )
+    db = sql.connect ( 'db\chia-farm-stats.db' )
     return db
 
 # cleanup the cli output to avoid confusion when cleaning space

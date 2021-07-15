@@ -3,7 +3,7 @@ from helpers import *
 def initialize_database() :
     import sqlite3 as sql
     """ Define the Database connection """
-    db = sql.connect ( "chia-farm-stats.db" )
+    db = sql.connect ( "db\chia-farm-stats.db" )
     with db :
         db.execute ( "CREATE TABLE if not exists plots (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, path TEXT,drive TEXT,size FLOAT, type TEXT, valid TEXT); " )
         db.execute ( "CREATE UNIQUE INDEX if not exists idx_plots_name ON plots ( name );" )
