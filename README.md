@@ -1,6 +1,10 @@
 ﻿# Manage-Chia-Farm
 ## Features
+![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/main_menu.png?raw=true)
+
 This program helps chia farmers manage the thousands of plots within their farm and helps in the following areas:
+  * **Resolve Issues Found**: This scans the data found during the *Verify Plot Directories and Plots* and
+    give farmer the option to fix chia configuration file, and remove invalid plots.
   * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
     extension and prompt manager to delete the files to clear space.
   * **Find duplicate plots**: Search the farm for duplicate file names and prompt manager to delete duplicates 
