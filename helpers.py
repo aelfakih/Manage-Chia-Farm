@@ -395,3 +395,7 @@ def do_scan_farm():
     db.commit ( )
     # Closing the connection
     db.close ( )
+
+def do_check_for_errors():
+    db = db_connect ( )
+    c = db.cursor ( )

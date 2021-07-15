@@ -43,11 +43,11 @@ logging.basicConfig(filename='log\\audit.log', encoding='utf-8',
 """ 
 initialize some of the variables needed in the program. Please do not change 
 """
-
 menu_find_non_plots = "Find non-Plots"
 menu_find_duplicates = "Find Duplicate Plots"
 menu_import_plots = "Import Plots into Farm"
 menu_scan_farm = "Verify Plot Directories and Plots"
+menu_resolve_issues = "Resolve Issues Found"
 
 
 
@@ -315,7 +315,7 @@ def initialize_me() :
     """ Get the plots available in the farm """
     chia_farm = get_chia_farm_plots ( )
     number_of_plots = len ( chia_farm )
-    print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted to this machine!\n" )
+    print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted to this machine!" )
     if is_verbose ( ) :
         logging.info ( "Found %s files in farm" % (number_of_plots) )
 
@@ -323,24 +323,27 @@ def initialize_me() :
 
 
 if __name__ == '__main__':
-
+    style = get_pyinquirer_style ( )
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+
+    """ Check if the chia binary is defined, otherwise exit"""
     if not os.path.exists ( chia_binary ) :
         print("Error: %s (chia_binary) is not found. Edit config.yaml" % (chia_binary))
         exit()
 
+    """ Setup the screen """
     print_top_menu()
     if is_verbose():
         logging.info("Program: Started")
 
-
-
-    """
-    Set the stage so we can monitor and analyze farm
-    """
     initialize_me ( )
 
-    style = get_pyinquirer_style ( )
+    """ add menu options when errors are found """
+    issues_found = do_check_for_issues()
+    if issues_found > 0 :
+        menu_options = [Separator(),menu_resolve_issues,Separator(),menu_find_non_plots , menu_find_duplicates , menu_scan_farm, menu_import_plots , Separator(), "Done"]
+    else:
+        menu_options = [Separator(), menu_find_non_plots , menu_find_duplicates , menu_scan_farm, menu_import_plots , Separator(), "Done"]
 
     loop=True
     while loop:
@@ -350,7 +353,7 @@ if __name__ == '__main__':
                 'type' : 'list' ,
                 'name' : 'do' ,
                 'message' : 'Select a farm management action' ,
-                'choices' : [ menu_find_non_plots , menu_find_duplicates , menu_scan_farm, menu_import_plots , Separator(), "Done"] ,
+                'choices' : menu_options ,
 
             }
         ]
@@ -366,6 +369,9 @@ if __name__ == '__main__':
             do_import_plots(style)
         elif answers['do'] == menu_scan_farm:
             do_scan_farm()
+        elif answers['do'] == menu_resolve_issues:
+            #do_resolve_issues()
+            print("Work in progress!")
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")

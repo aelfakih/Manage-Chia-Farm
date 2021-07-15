@@ -12,6 +12,6 @@ def initialize_database() :
 
         # Commit your changes in the database
         db.commit ( )
-    print("* Initialized Database...")
+    print("* Initializing Database...")
 
 
