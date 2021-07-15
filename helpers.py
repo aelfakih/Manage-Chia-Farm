@@ -396,6 +396,25 @@ def do_scan_farm():
     # Closing the connection
     db.close ( )
 
-def do_check_for_errors():
+def do_check_for_issues():
+    issues = 0
     db = db_connect ( )
     c = db.cursor ( )
+
+    """ Check for invalid plots"""
+    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'No'"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    if len ( data ) > 0 :
+        logging.error ("Found %s invalid plot-directory definitions in chia's config.yaml file")
+        issues += len(data)
+
+    """ Check fir invalid plots"""
+    SQLQ = "SELECT * FROM plots WHERE valid = 'No'"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    if len ( data ) > 0 :
+        logging.error ("Found %s invalid plots in farm")
+        issues += len(data)
+    print("! Found %s issues in farm configuration" % (issues))
+    return issues
