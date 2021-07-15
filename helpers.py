@@ -26,6 +26,14 @@ def indent(symbol,string):
 def Average(lst):
 	return sum(lst) / len(lst)
 
+""" For a given pathm find the mount points"""
+def find_mount_point(path):
+    path = os.path.abspath(path)
+    while not os.path.ismount(path):
+        path = os.path.dirname(path)
+    return path
+
+
 # defrag logic
 def defrag_plots(plot_dirs, average_size):
     min_storage_available = 9999999999
@@ -68,7 +76,7 @@ def get_config(file_path):
 
 #################### Helpers ####################
 
-def get_letter_drive(dir) :
+def get_mount_point(dir) :
     drive = pathlib.Path ( dir ).parts[0]
     return drive
 
@@ -293,6 +301,10 @@ def get_plots_in_list( list ) :
     plot_list = list ( filter ( p.match , list ) )
     return plot_list
 
+def bytes_to_gib(number) :
+    number = number // (2 ** 30)
+    return number
+
 def do_scan_farm():
     from tqdm import tqdm , trange
     chia_farm = []
@@ -311,9 +323,13 @@ def do_scan_farm():
         print ( "* Checking plot directory %s: " % (dir), end="" )
 
         if os.path.isdir(dir):
-            letter_drive = get_letter_drive ( dir )
+            mount_point = find_mount_point(dir)
+            mount_total , mount_used , mount_free = shutil.disk_usage ( drive )
+            mount_total = bytes_to_gib(mount_total)
+            mount_used = bytes_to_gib(mount_used)
+            mount_free = bytes_to_gib(mount_free)
             print(" Directory: Valid |",end="")
-            SQLQ = "REPLACE INTO plot_directory (path, drive, type, valid) values ('%s','%s','%s','%s')" % (dir , letter_drive , "local" , "Yes")
+            SQLQ = "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes")
             c.execute ( SQLQ )
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
@@ -358,7 +374,7 @@ def do_scan_farm():
                                         type = "OG"
 
                                     SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
-                                        plot , dir , letter_drive , plot_size , type , valid)
+                                        plot , dir , mount_point , plot_size , type , valid)
                                     c.execute ( SQLQ )
 
                                 else :
@@ -368,15 +384,11 @@ def do_scan_farm():
                                 logging.info ( "Plot %s has been previously scanned!" % (plot) )
                         # Commit your changes in the database
                         db.commit ( )
-
-
-
-
         else:
             ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
-            SQLQ = "REPLACE INTO plot_directory (path, drive, type, valid) values ('%s','%s','%s','%s')" % (dir , letter_drive , "local" , "No")
+            SQLQ = "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , mount_point , 0, 0,0, "No")
             c.execute ( SQLQ )
 
     # Commit your changes in the database
