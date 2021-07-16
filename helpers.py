@@ -509,6 +509,8 @@ def do_resolve_issues():
 def do_show_farm_distribution():
     db = db_connect ( )
     c = db.cursor ( )
+    og=0
+    nft=0
 
     """ Check for invalid plots"""
     SQLQ = "SELECT count(*), type FROM plots WHERE valid = 'Yes' GROUP BY type"
