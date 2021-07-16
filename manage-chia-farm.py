@@ -63,8 +63,9 @@ def get_chia_farm_plots() :
             for plot in arr :
                 if plot not in ignore_these:
                     filename = directory + '\\' + plot
-                    chia_farm.append ( filename )
-                    plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
+                    if os.path.isfile(filename):
+                        chia_farm.append ( filename )
+                        plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
         else:
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
     # sort chia_farm
@@ -82,23 +83,15 @@ def get_average_plot_sizes( plot_dirs ) :
 
 def get_non_plots_in_farm( chia_farm ) :
     plot_list =[]
-    chia_list =[]
 
     # find files that have .plot extension
     p = re.compile ( ".*\.plot$" )
 
-    for item in chia_farm:
-        if os.path.isfile(item):
-            chia_list.append(item)
-
     # find symmetric difference.
-    filter_list = list ( filter ( p.match , chia_list ) )
+    plot_list = list ( filter ( p.match , chia_farm ) )
 
-    for item in filter_list:
-        if os.path.isfile(item):
-            plot_list.append(item)
-    # find symmetric difference.
-    non_plot_list = set ( plot_list ).symmetric_difference ( chia_list )
+   # find symmetric difference.
+    non_plot_list = set ( plot_list ).symmetric_difference ( chia_farm )
     return non_plot_list
 
 def get_duplicte_plotnames(plot_dirs) :

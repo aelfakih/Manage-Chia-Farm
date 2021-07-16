@@ -343,7 +343,7 @@ def do_scan_farm():
                 with tqdm ( total=plots_at_location ) as pbar :
                     for plot in arr :
                         pbar.update ( 1 )
-                        if (plot not in ignore_these) and (os.path.isfile(plot)) :
+                        if (plot not in ignore_these) :
                             c.execute ( "SELECT id FROM plots WHERE name = '%s' and path='%s'" % (plot,dir) )
                             data = c.fetchall ( )
                             if len ( data ) == 0 :
