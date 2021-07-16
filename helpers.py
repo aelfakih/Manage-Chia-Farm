@@ -528,6 +528,9 @@ def do_show_farm_distribution():
     from collections import defaultdict
     C = tg.AVAILABLE_COLORS
 
+    nft_pct = (nft/(nft+og)) * 100
+    og_pct = (og/(nft+og)) * 100
+
     tg.chart (
         colors=[C["green"] , C["yellow"]] ,
         data=[[nft , og]] ,
@@ -535,10 +538,10 @@ def do_show_farm_distribution():
             bool ,
             {
                 "stacked" : True ,
-                "width" : 60 ,
+                "width" : 100 ,
                 "format" : "{:<5.2f}" ,
                 "no_labels" : True ,
-                "suffix" : f" (NFT: %s, OG: %s)" % (nft,og) ,
+                "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
             } ,
         ) ,
         labels=[""] ,
