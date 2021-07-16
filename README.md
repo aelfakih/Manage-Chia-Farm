@@ -3,6 +3,8 @@
 ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/main_menu.png?raw=true)
 
 This program helps chia farmers manage the thousands of plots within their farm and helps in the following areas:
+  * **Show Available Farm Capacity**: This function scans the database and reports the available number of plots
+    that can be stored in the plot directory (assumes k32 plot size 104.5 Gb).
   * **Resolve Issues Found**: This scans the data found during the *Verify Plot Directories and Plots* and
     give farmer the option to fix chia configuration file, and remove invalid plots.
   * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
@@ -17,9 +19,11 @@ This program helps chia farmers manage the thousands of plots within their farm 
     * **Verifies plots are valid** for the installed chia instance.
     * **Classifies the plots as NFT or OG**.
     * Saves location and size  
-  * **Import plots into farm**: This allows the consolidation of plots into a location as you upgrade your drives or 
-    move plots from plotters to farm.  This is one of my favorite utilities since it does the copying, renaming and 
-    removing of files so that farming is not interrupted.   
+  * **Move plots**: Allow farmer to free-form enter a path to search for plots to move from one locaiton to another. 
+    This function allows the consolidation of plots into a location as you upgrade your drives or 
+    move plots from plotters to farm.  Source files can be kept as it, renamed or deleted.  (note that if you ctrl-C 
+    out of manage-chia-farm while executing a command, it will apply the selected action on source file -- if you
+    do not want to lose any plots, always use the *imported* option then manually delete the source files)    
 
 > Script was tested with python 3.9 on Windows 10 
 
