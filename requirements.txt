@@ -1,3 +1,4 @@
 PyYaml==5.4.1
 TQDM
 PyInquirer
+termgraph

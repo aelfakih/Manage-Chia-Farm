@@ -418,9 +418,20 @@ def do_check_for_issues():
     SQLQ = "SELECT * FROM plots WHERE valid = 'No'"
     c.execute ( SQLQ )
     data = c.fetchall ( )
+    invalid_plots =0
     if len ( data ) > 0 :
-        logging.error ("Found %s invalid plots in farm" % (len ( data )))
-        issues += len(data)
+        for line in data:
+            path = line[2]
+            file = line[1]
+            filename = path + file
+            if os.path.isfile(filename):
+                invalid_plots += 1
+            else:
+                SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
+                c.execute ( SQLQ )
+                db.commit()
+        logging.error ("Found %s invalid plots in farm" % (issues))
+    issues += invalid_plots
     return issues
 
 def do_resolve_issues():
@@ -471,25 +482,62 @@ def do_resolve_issues():
         for line in data:
             print ( "> %s\%s is NOT a valid chia plot file" % (line[2],line[1]) )
 
-            questions = [
-                {
-                    'type' : 'confirm' ,
-                    'name' : 'do' ,
-                    'message' : 'Do you want to DELETE these files?' ,
-                    'default' : False ,
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'name' : 'do' ,
+                'message' : 'Do you want to DELETE these files?' ,
+                'default' : False ,
 
-                }
-            ]
-            answers = prompt ( questions , style=style )
-            if answers['do'] :
-                print ( "* Deleting invalid files plot files..." )
-                for line in data :
-                    path = line[2]
-                    file = line[1]
-                    filename = path + file
-                    os.remove(filename)
-                    SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
-                    c.execute ( SQLQ )
-                db.commit ( )
-            else :
-                print ( "* No changes made to chia configuration" )
+            }
+        ]
+        answers = prompt ( questions , style=style )
+        if answers['do'] :
+            print ( "* Deleting invalid files plot files..." )
+            for line in data :
+                path = line[2]
+                file = line[1]
+                filename = path + file
+                os.remove ( filename )
+                SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
+                c.execute ( SQLQ )
+            db.commit ( )
+        else :
+            print ( "* No changes made to chia configuration" )
+
+
+def do_show_farm_distribution():
+    db = db_connect ( )
+    c = db.cursor ( )
+
+    """ Check for invalid plots"""
+    SQLQ = "SELECT count(*), type FROM plots WHERE valid = 'Yes' GROUP BY type"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    for line in data:
+        if line[1] == 'NFT':
+            nft = line[0]
+        else:
+            og = line[0]
+
+    #print (data, nft, og)
+
+    from termgraph import termgraph as tg
+    from collections import defaultdict
+    C = tg.AVAILABLE_COLORS
+
+    tg.chart (
+        colors=[C["green"] , C["yellow"]] ,
+        data=[[nft , og]] ,
+        args=defaultdict (
+            bool ,
+            {
+                "stacked" : True ,
+                "width" : 60 ,
+                "format" : "{:<5.2f}" ,
+                "no_labels" : True ,
+                "suffix" : f" (NFT: %s, OG: %s)" % (nft,og) ,
+            } ,
+        ) ,
+        labels=[""] ,
+    )

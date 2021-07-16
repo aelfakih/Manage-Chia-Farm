@@ -348,6 +348,8 @@ if __name__ == '__main__':
     loop=True
     while loop:
 
+        do_show_farm_distribution()
+
         """ add menu options when errors are found """
         issues_found = do_check_for_issues ( )
         if issues_found > 0 :
