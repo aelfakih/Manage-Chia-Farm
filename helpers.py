@@ -44,8 +44,8 @@ def defrag_plots(plot_dirs, average_size):
         drive = pathlib.Path(dir).parts[0]
         total, used, free = shutil.disk_usage(drive)
         # convert to GiB
-        free = free // (2**30)
-        used = used // (2**30)
+        free = bytes_to_gib(free)
+        used = bytes_to_gib(used)
         calculated_num_of_plots = round(used / average_size)
         if free > average_size:
             counter += 1
@@ -152,16 +152,14 @@ def do_import_plots(style):
 
     questions = [
         {
-            'type' : 'list' ,
+            'type' : 'input' ,
             'name' : 'from' ,
-            'choices': available_drives,
-            'message' : 'Which Drive to you want to import FROM?'
+            'message' : 'Enter path to search for plots to MOVE?'
 
         }
     ]
     answers = prompt ( questions , style=style )
-    pattern = "\|(.*?)\|"
-    import_from = re.search ( pattern , answers['from'] ).group ( 1 )
+    import_from = answers['from']
 
 
     print("* Searching for .plot files in [%s] ..." % (import_from))
@@ -172,7 +170,7 @@ def do_import_plots(style):
             if file.endswith ( ".plot" ) :
                 filename = root + '\\' + file
                 plots_to_import.append ( filename )
-                size_gb = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
+                size_gb = bytes_to_gib ( os.path.getsize ( filename ))
                 total_size_gb += size_gb
                 print (">" , "%s (%s GiB)" % (filename , size_gb) )
 
@@ -203,8 +201,8 @@ def do_import_plots(style):
         drive = pathlib.Path ( import_to ).parts[0]
         total , used , free = shutil.disk_usage ( drive )
         # convert to GiB
-        free = free // (2 ** 30)
-        used = used // (2 ** 30)
+        free = bytes_to_gib(free)
+        used = bytes_to_gib(used)
         total_size_gb = round(total_size_gb,0)
 
     if free < total_size_gb:
@@ -235,8 +233,27 @@ def do_import_plots(style):
         for plot in plots_to_import :
             print ( "* Copying %s to %s" % (plot , import_to) )
             do_import_file_into_farm(plot,import_to, import_action)
+            ### delete the SQL entry (delete both entries from to)
+
+            """ delete size of originating plot directory"""
+            do_reset_plot_directory_for_filename ( plot )
+
+            """ delete size of destination plot directory"""
+            do_reset_plot_directory_for_filename ( import_to )
+
+        # rescan farm after changes
+        do_scan_farm ( )
     else :
         print ( "* No plots were moved from %s" % (import_from) )
+
+
+def do_reset_plot_directory_for_filename(filename) :
+    db = db_connect ( )
+    c = db.cursor ( )
+    mount_point = find_mount_point ( filename )
+    SQLQ = f"DELETE FROM plot_directory WHERE drive = '{mount_point}'"
+    c.execute ( SQLQ )
+    db.commit()
 
 
 """ 
@@ -292,7 +309,7 @@ def do_import_file_into_farm(src, destination_folder, action):
                         logging.info ( "[SOURCE] Deleted %s" % (src) )
 
 
-                print ( f'Done! Copied {f_size} bytes.' )
+                print ( f'Done! Copied {bytes_to_gib(f_size)} GiB' )
 
 
 def get_plots_in_list( list ) :
@@ -348,7 +365,7 @@ def do_scan_farm():
                             data = c.fetchall ( )
                             if len ( data ) == 0 :
                                 filename = dir + '\\' + plot
-                                plot_size = round ( os.path.getsize ( filename ) / (2 ** 30) , 2 )
+                                plot_size = bytes_to_gib( os.path.getsize ( filename ))
                                 logging.info ( "Checking %s:" % (plot) )
                                 logging.info ( " Size: %s |" % (plot_size) )
 
@@ -501,10 +518,14 @@ def do_resolve_issues():
                 os.remove ( filename )
                 SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
                 c.execute ( SQLQ )
-            db.commit ( )
+                db.commit ( )
+                # reset the plot_directory_stats for the removed files
+                do_reset_plot_directory_for_filename ( filename )
         else :
             print ( "* No changes made to chia configuration" )
 
+    # rescan farm after changes
+    do_scan_farm ( )
 
 def do_show_farm_distribution():
     db = db_connect ( )
@@ -538,7 +559,7 @@ def do_show_farm_distribution():
             bool ,
             {
                 "stacked" : True ,
-                "width" : 100 ,
+                "width" : 60 ,
                 "format" : "{:<5.2f}" ,
                 "no_labels" : True ,
                 "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
@@ -546,3 +567,92 @@ def do_show_farm_distribution():
         ) ,
         labels=[""] ,
     )
+
+
+def do_show_farm_capacity():
+    from termgraph import termgraph as tg
+    from collections import defaultdict
+    db = db_connect ( )
+    c = db.cursor ( )
+    color = tg.AVAILABLE_COLORS
+    labels=[]
+    used=[]
+    free=[]
+
+    print("* Farm capacity in (plots)")
+    """ Check for invalid plots"""
+    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'Yes'"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    for line in data:
+        path = line[1]
+
+        # if the free space is greater than an average k32 (101.5 GiB) plot then show availability
+        if line[5] > 101.5:
+            free.append(round(line[5]/101.5))
+            used.append(line[4])
+            labels.append(path.ljust(25))
+
+
+    #print(labels,free)
+    colors = [color["green"]]
+    suffix ="available plot space(s)"
+    tprint ( False, labels , free , colors, suffix, format="{:<5.0f}" )
+
+def do_show_farm_usage():
+    from termgraph import termgraph as tg
+    from collections import defaultdict
+    db = db_connect ( )
+    c = db.cursor ( )
+    color = tg.AVAILABLE_COLORS
+
+    print("* Farm capacity in (plots)")
+    """ Check for invalid plots"""
+    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'Yes'"
+    c.execute ( SQLQ )
+    data = c.fetchall ( )
+    for line in data:
+        path = line[1]
+        used = line[4]
+        free = line[5]
+
+
+        tg.chart (
+            colors=[color["magenta"] , color["green"]] ,
+            data=[[used , free]] ,
+            args=defaultdict (
+                bool ,
+                {
+                    "stacked" : True ,
+                    "width" : 60 ,
+                    "format" : "{:.0f}" ,
+                    "no_labels" : False ,
+                    "suffix" : f" GiB Total | Used {used:.1f} GiB | Free {free:.1f} GiB"
+                } ,
+            ) ,
+            labels=[path.ljust(25)] ,
+        )
+
+
+#    print(labels,used)
+#    colors = [color["magenta"],color["yellow"]]
+#    suffix =" GiB used"
+#    tprint ( True, labels , used , colors, suffix, format="{:<3.2f}" )
+
+
+def tprint(stacked,labels, values, colors, suffix, **kwargs):
+    from termgraph.termgraph import chart
+
+    args = {
+        "stacked": stacked,
+        "width": 60,
+        "no_labels": False,
+        "format": "{:<6.2f}",
+        "suffix": suffix,
+        "vertical": False,
+        "histogram": False,
+        "no_values": False,
+    }
+    args.update(kwargs)
+    data = [[x] for x in values]
+    chart(colors=colors, data=data, args=args, labels=labels)
