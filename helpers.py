@@ -389,8 +389,7 @@ def do_scan_farm():
             mount_used = bytes_to_gib(mount_used)
             mount_free = bytes_to_gib(mount_free)
             print(" Directory: Valid |",end="")
-            SQLQ = "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes")
-            c.execute ( SQLQ )
+            do_changes_to_database( "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes"))
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
                 logging.error("%s plot is offline" % (dir))
@@ -432,9 +431,8 @@ def do_scan_farm():
                                         logging.info ( " Plot Type: OG" )
                                         type = "OG"
 
-                                    SQLQ = "REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
-                                        plot , dir , mount_point , plot_size , type , valid)
-                                    c.execute ( SQLQ )
+                                    do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
+                                        plot , dir , mount_point , plot_size , type , valid))
 
                                 else :
                                     logging.error ( "Chia binary was not found, please check config.yaml setting **" )
@@ -447,8 +445,7 @@ def do_scan_farm():
             ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
-            SQLQ = "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No")
-            c.execute ( SQLQ )
+            do_changes_to_database("REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No"))
 
     # Commit your changes in the database
     db.commit ( )
@@ -483,9 +480,7 @@ def do_check_for_issues():
             if os.path.isfile(filename):
                 invalid_plots += 1
             else:
-                SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
-                c.execute ( SQLQ )
-                db.commit()
+                do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
         logging.error ("Found %s invalid plots in farm" % (issues))
     issues += invalid_plots
     return issues
@@ -520,9 +515,7 @@ def do_resolve_issues():
             for line in data :
                 path = line[1]
                 output = subprocess.getoutput ( '%s plots remove -d %s' % (chia_binary , path) )
-                SQLQ = "DELETE FROM plot_directory WHERE ID = %s" % (line[0])
-                c.execute ( SQLQ )
-            db.commit()
+                do_changes_to_database("DELETE FROM plot_directory WHERE ID = %s" % (line[0]))
         else:
             print ( "* No changes made to chia configuration" )
 
@@ -551,9 +544,7 @@ def do_resolve_issues():
                 file = line[1]
                 filename = path + file
                 os.remove ( filename )
-                SQLQ = "DELETE FROM plots WHERE ID = %s" % (line[0])
-                c.execute ( SQLQ )
-                db.commit ( )
+                do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
                 # reset the plot_directory_stats for the removed files
                 do_changes_to_database (
                     "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( filename )) )
