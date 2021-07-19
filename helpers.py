@@ -225,8 +225,8 @@ def do_import_plots(style):
             import_to = answers['to'][answers['to'].find ( '[' ) + 1 :answers['to'].find ( ']' )]
 
             # exit if they to and form are the same
-            if import_from == import_to:
-                print("! TO and FROM destination is the same. Skipping")
+            if import_from == find_mount_point ( import_to ):
+                print("! TO and FROM destinations are the same! Skipping")
                 return
 
             if import_to == "Cancel":
