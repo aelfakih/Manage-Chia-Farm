@@ -267,13 +267,15 @@ def do_import_plots(style):
             for plot in plots_to_import :
                 print ( "* Copying %s to %s" % (plot , import_to) )
                 do_import_file_into_farm(plot,import_to, import_action)
-                ### delete the SQL entry (delete both entries from to)
+
+                """ Reset the stats of the plot so that it is rescanned in new location"""
+                do_changes_to_database("DELETE FROM plots WHERE name = '%s'" % (os.path.basename(plot)))
 
                 """ delete size of originating plot directory"""
-                do_reset_plot_directory_for_filename ( plot )
+                do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point( plot )) )
 
                 """ delete size of destination plot directory"""
-                do_reset_plot_directory_for_filename ( import_to )
+                do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( import_to )) )
 
             # rescan farm after changes
             do_scan_farm ( )
@@ -289,13 +291,12 @@ def get_results_from_database(sql_query) :
     return data
 
 
-def do_reset_plot_directory_for_filename(filename) :
+def do_changes_to_database(sql_query) :
     db = db_connect ( )
     c = db.cursor ( )
-    mount_point = find_mount_point ( filename )
-    SQLQ = f"DELETE FROM plot_directory WHERE drive = '{mount_point}'"
-    c.execute ( SQLQ )
+    c.execute ( sql_query )
     db.commit()
+    return
 
 
 """ 
@@ -466,17 +467,13 @@ def do_check_for_issues():
     c = db.cursor ( )
 
     """ Check for invalid plots"""
-    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'No'"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'No'")
     if len ( data ) > 0 :
         logging.error ("Found %s invalid plot-directory definitions in chia's config.yaml file" % (len ( data )))
         issues += len(data)
 
     """ Check fir invalid plots"""
-    SQLQ = "SELECT * FROM plots WHERE valid = 'No'"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT * FROM plots WHERE valid = 'No'")
     invalid_plots =0
     if len ( data ) > 0 :
         for line in data:
@@ -500,9 +497,7 @@ def do_resolve_issues():
     style = get_pyinquirer_style ( )
 
     """ Check for invalid plots"""
-    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'No'"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'No'")
     if len ( data ) > 0 :
         print ("* Plot-directory definitions in chia's config.yaml (%s issue found)" % (len ( data )))
 
@@ -532,9 +527,7 @@ def do_resolve_issues():
             print ( "* No changes made to chia configuration" )
 
     """ Check fir invalid plots"""
-    SQLQ = "SELECT * FROM plots WHERE valid = 'No'"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT * FROM plots WHERE valid = 'No'")
     if len ( data ) > 0 :
         print ("* Invalid plots found in farm (%s)" % (len ( data )))
 
@@ -562,7 +555,8 @@ def do_resolve_issues():
                 c.execute ( SQLQ )
                 db.commit ( )
                 # reset the plot_directory_stats for the removed files
-                do_reset_plot_directory_for_filename ( filename )
+                do_changes_to_database (
+                    "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( filename )) )
         else :
             print ( "* No changes made to chia configuration" )
 
@@ -576,9 +570,7 @@ def do_show_farm_distribution():
     nft=0
 
     """ Check for invalid plots"""
-    SQLQ = "SELECT count(*), type FROM plots WHERE valid = 'Yes' GROUP BY type"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT count(*), type FROM plots WHERE valid = 'Yes' GROUP BY type")
     for line in data:
         if line[1] == 'NFT':
             nft = line[0]
@@ -604,7 +596,7 @@ def do_show_farm_distribution():
                 bool ,
                 {
                     "stacked" : True ,
-                    "width" : 60 ,
+                    "width" : 40 ,
                     "format" : "{:<5.2f}" ,
                     "no_labels" : True ,
                     "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
@@ -626,9 +618,7 @@ def do_show_farm_capacity():
 
     print("* Farm capacity in (plots)")
     """ Check for invalid plots"""
-    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'Yes'"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'Yes'")
     if data:
         for line in data:
             path = line[1]
@@ -657,9 +647,7 @@ def do_show_farm_usage():
 
     print("* Farm capacity in (plots)")
     """ Check for invalid plots"""
-    SQLQ = "SELECT * FROM plot_directory WHERE valid = 'Yes'"
-    c.execute ( SQLQ )
-    data = c.fetchall ( )
+    data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'Yes'")
     for line in data:
         path = line[1]
         used = line[4]
