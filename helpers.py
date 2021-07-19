@@ -182,9 +182,18 @@ def do_import_plots(style):
     import_from = answers['from'][answers['from'].find('[')+1:answers['from'].find(']')]
 
     if import_from == "Other":
-        print("* Coming soon.")
-        return
-    elif import_from == "Cancel":
+        questions = [
+            {
+                'type' : 'input' ,
+                'name' : 'from' ,
+                'message' : 'Please enter SOURCE location'
+
+            }
+        ]
+        answers = prompt ( questions , style=style )
+        import_from = answers['from']
+
+    if import_from == "Cancel":
         return
     else:
         print("* Searching for .plot files in [%s] ..." % (import_from))
