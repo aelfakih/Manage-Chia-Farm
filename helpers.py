@@ -148,7 +148,8 @@ def do_import_plots(style):
     SELECT pd.drive as MOUNT, 
     (select count(*) from plots where drive = pd.drive and type = 'NFT') as NFT, 
     (select count(*) from plots where drive = pd.drive and type = 'OG') as OG ,
-    pd.drive_free
+    pd.drive_free,
+    pd.path
     FROM plot_directory as pd ;
     """)
     for line in results:
@@ -156,9 +157,10 @@ def do_import_plots(style):
         nft = line[1]
         og = line[2]
         free = round(line[3]/101.5)
+        path = line[4]
         from_drives.append("[%s]  Contains %s NFTs, %s OGs" %  (drive,nft,og))
         if line[3] > 101.5 :
-            to_drives.append("[%s]  Contains %s NFTs, %s OGs, and can accommodate %s k32 plots" %  (drive,nft,og,free))
+            to_drives.append("[%s]  Contains %s NFTs, %s OGs, and can accommodate %s k32 plots" %  (path,nft,og,free))
 
     # added an option for manual input
     from_drives.append ( ">> [Other] Location not listed in chia's plots directory" )
