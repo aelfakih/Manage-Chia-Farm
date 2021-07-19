@@ -48,7 +48,7 @@ menu_find_duplicates = "Find Duplicate Plots (Scan)"
 menu_import_plots = "Move Plots (Scan)"
 menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available space"
-menu_show_farm_usage = "Show Used Usage"
+menu_show_farm_usage = "Show Used Space"
 menu_resolve_issues = "Resolve Issues Found"
 dynamic_menu_resolve_issues = ""
 
