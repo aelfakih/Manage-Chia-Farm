@@ -549,24 +549,27 @@ def do_show_farm_distribution():
     from collections import defaultdict
     C = tg.AVAILABLE_COLORS
 
-    nft_pct = (nft/(nft+og)) * 100
-    og_pct = (og/(nft+og)) * 100
+    if (nft == 0) and (og == 0):
+        print("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots...")
+    else:
+        nft_pct = (nft/(nft+og)) * 100
+        og_pct = (og/(nft+og)) * 100
 
-    tg.chart (
-        colors=[C["green"] , C["yellow"]] ,
-        data=[[nft , og]] ,
-        args=defaultdict (
-            bool ,
-            {
-                "stacked" : True ,
-                "width" : 60 ,
-                "format" : "{:<5.2f}" ,
-                "no_labels" : True ,
-                "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
-            } ,
-        ) ,
-        labels=[""] ,
-    )
+        tg.chart (
+            colors=[C["green"] , C["yellow"]] ,
+            data=[[nft , og]] ,
+            args=defaultdict (
+                bool ,
+                {
+                    "stacked" : True ,
+                    "width" : 60 ,
+                    "format" : "{:<5.2f}" ,
+                    "no_labels" : True ,
+                    "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
+                } ,
+            ) ,
+            labels=[""] ,
+        )
 
 
 def do_show_farm_capacity():
@@ -584,20 +587,24 @@ def do_show_farm_capacity():
     SQLQ = "SELECT * FROM plot_directory WHERE valid = 'Yes'"
     c.execute ( SQLQ )
     data = c.fetchall ( )
-    for line in data:
-        path = line[1]
+    if data:
+        for line in data:
+            path = line[1]
 
-        # if the free space is greater than an average k32 (101.5 GiB) plot then show availability
-        if line[5] > 101.5:
-            free.append(round(line[5]/101.5))
-            used.append(line[4])
-            labels.append(path.ljust(25))
+            # if the free space is greater than an average k32 (101.5 GiB) plot then show availability
+            if line[5] > 101.5:
+                free.append(round(line[5]/101.5))
+                used.append(line[4])
+                labels.append(path.ljust(25))
 
 
-    #print(labels,free)
-    colors = [color["green"]]
-    suffix ="available plot space(s)"
-    tprint ( False, labels , free , colors, suffix, format="{:<5.0f}" )
+        #print(labels,free)
+        colors = [color["green"]]
+        suffix ="available plot space(s)"
+        tprint ( False, labels , free , colors, suffix, format="{:<5.0f}" )
+    else:
+        print ("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots..." )
+
 
 def do_show_farm_usage():
     from termgraph import termgraph as tg
