@@ -135,116 +135,156 @@ def do_import_plots(style):
     import_action=[]
     drive_size={}
     total_size_gb= 0
-    available_drives =[]
+    from_drives =[]
+    to_drives =[]
+
     free = 0
     used = 0
     action_keep = "Keep it"
     action_rename ="Keep and RENAME extension to 'IMPORTED'"
     action_delete ="Delete it"
 
-    #available_drives = ['%s:' % d for d in string.ascii_uppercase if os.path.exists ( '%s:' % d )]
-    for drive in ['%s:' % d for d in string.ascii_uppercase if os.path.exists ( '%s:' % d )]:
-        total , used , free = shutil.disk_usage ( drive )
-        # convert to GiB
-        free = free // (2 ** 30)
-        #print( "%s (%s) GiB Free" %  (drive,free) )
-        available_drives.append("|%s| Free (%s) GiB" %  (drive,free))
+    results = get_results_from_database ("""
+    SELECT pd.drive as MOUNT, 
+    (select count(*) from plots where drive = pd.drive and type = 'NFT') as NFT, 
+    (select count(*) from plots where drive = pd.drive and type = 'OG') as OG ,
+    pd.drive_free
+    FROM plot_directory as pd ;
+    """)
+    for line in results:
+        drive = line[0]
+        nft = line[1]
+        og = line[2]
+        free = round(line[3]/101.5)
+        from_drives.append("[%s]  Contains %s NFTs, %s OGs" %  (drive,nft,og))
+        if line[3] > 101.5 :
+            to_drives.append("[%s]  Contains %s NFTs, %s OGs, and can accommodate %s k32 plots" %  (drive,nft,og,free))
+
+    # added an option for manual input
+    from_drives.append ( ">> [Other] Location not listed in chia's plots directory" )
+    from_drives.append ( ">> [Cancel]" )
+
+    to_drives.append ( ">> [Cancel]" )
+
 
     questions = [
         {
-            'type' : 'input' ,
+            'type' : 'list' ,
             'name' : 'from' ,
-            'message' : 'Enter path to search for plots to MOVE?'
+            'choices': from_drives,
+            'message' : 'Select SOURCE location to search for plots that you want to MOVE INTO farm?'
 
         }
     ]
     answers = prompt ( questions , style=style )
-    import_from = answers['from']
+    import_from = answers['from'][answers['from'].find('[')+1:answers['from'].find(']')]
 
+    if import_from == "Other":
+        print("* Coming soon.")
+        return
+    elif import_from == "Cancel":
+        return
+    else:
+        print("* Searching for .plot files in [%s] ..." % (import_from))
 
-    print("* Searching for .plot files in [%s] ..." % (import_from))
+        """ Walk the drive looking for .plot files """
+        for root , dirs , files in os.walk ( import_from ) :
+            for file in files :
+                if file.endswith ( ".plot" ) :
+                    filename = root + '\\' + file
+                    plots_to_import.append ( filename )
+                    size_gb = bytes_to_gib ( os.path.getsize ( filename ))
+                    total_size_gb += size_gb
+                    print (">" , "%s (%s GiB)" % (filename , size_gb) )
 
-    """ Walk the drive looking for .plot files """
-    for root , dirs , files in os.walk ( import_from ) :
-        for file in files :
-            if file.endswith ( ".plot" ) :
-                filename = root + '\\' + file
-                plots_to_import.append ( filename )
-                size_gb = bytes_to_gib ( os.path.getsize ( filename ))
-                total_size_gb += size_gb
-                print (">" , "%s (%s GiB)" % (filename , size_gb) )
-
-    questions = [
-        {
-            'type' : 'confirm' ,
-            'name' : 'import' ,
-            'message' : 'Do you want to import these files?' ,
-            'default' : False
-
-        }
-    ]
-    answers = prompt ( questions , style=style )
-    import_decision = answers['import']
-
-    if import_decision == True :
         questions = [
             {
-                'type' : 'input' ,
-                'name' : 'to' ,
-                'message' : 'Which location you wanto to move plots TO?'
+                'type' : 'confirm' ,
+                'name' : 'import' ,
+                'message' : 'Do you want to import these files?' ,
+                'default' : False
 
             }
         ]
         answers = prompt ( questions , style=style )
-        import_to = answers['to']
+        import_decision = answers['import']
 
-        drive = pathlib.Path ( import_to ).parts[0]
-        total , used , free = shutil.disk_usage ( drive )
-        # convert to GiB
-        free = bytes_to_gib(free)
-        used = bytes_to_gib(used)
-        total_size_gb = round(total_size_gb,0)
+        if import_decision == True :
+            questions = [
+                {
+                    'type' : 'list' ,
+                    'name' : 'to' ,
+                    'choices' : to_drives ,
+                    'message' : 'Which location you wanto to move plots TO?'
 
-    if free < total_size_gb:
-        print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_gb, free))
-        print ("* You can move the remaining plots to a different destination later by re-runinng this utility. ")
+                }
+            ]
+            answers = prompt ( questions , style=style )
+            import_to = answers['to'][answers['to'].find ( '[' ) + 1 :answers['to'].find ( ']' )]
 
-    if import_decision == True :
-        questions = [
-            {
-                'type' : 'list' ,
-                'name' : 'delete' ,
-                'choices': [action_keep, action_rename, action_delete],
-                'message' : 'After the import is complete, what do you want to do with SOURCE plot?'
+            # exit if they to and form are the same
+            if import_from == import_to:
+                print("! TO and FROM destination is the same. Skipping")
+                return
 
-            }
-        ]
-        answers = prompt ( questions , style=style )
-        action = answers['delete']
+            if import_to == "Cancel":
+                return
 
-        if action == action_keep:
-            import_action = "keep"
-        elif action == action_rename:
-            import_action = "rename"
-        elif action == action_delete:
-            import_action = "delete"
+            drive = pathlib.Path ( import_to ).parts[0]
+            total , used , free = shutil.disk_usage ( drive )
+            # convert to GiB
+            free = bytes_to_gib(free)
+            used = bytes_to_gib(used)
+            total_size_gb = round(total_size_gb,0)
 
-    if (plots_to_import) and (import_decision == True) and (import_to):
-        for plot in plots_to_import :
-            print ( "* Copying %s to %s" % (plot , import_to) )
-            do_import_file_into_farm(plot,import_to, import_action)
-            ### delete the SQL entry (delete both entries from to)
+        if free < total_size_gb:
+            print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_gb, free))
+            print ("* You can move the remaining plots to a different destination later by re-running this utility. ")
 
-            """ delete size of originating plot directory"""
-            do_reset_plot_directory_for_filename ( plot )
+        if import_decision == True :
+            questions = [
+                {
+                    'type' : 'list' ,
+                    'name' : 'delete' ,
+                    'choices': [action_keep, action_rename, action_delete],
+                    'message' : 'After the import is complete, what do you want to do with SOURCE plot?'
 
-            """ delete size of destination plot directory"""
-            do_reset_plot_directory_for_filename ( import_to )
+                }
+            ]
+            answers = prompt ( questions , style=style )
+            action = answers['delete']
 
-        # rescan farm after changes
-        do_scan_farm ( )
-    else :
-        print ( "* No plots were moved from %s" % (import_from) )
+            if action == action_keep:
+                import_action = "keep"
+            elif action == action_rename:
+                import_action = "rename"
+            elif action == action_delete:
+                import_action = "delete"
+
+        if (plots_to_import) and (import_decision == True) and (import_to):
+            for plot in plots_to_import :
+                print ( "* Copying %s to %s" % (plot , import_to) )
+                do_import_file_into_farm(plot,import_to, import_action)
+                ### delete the SQL entry (delete both entries from to)
+
+                """ delete size of originating plot directory"""
+                do_reset_plot_directory_for_filename ( plot )
+
+                """ delete size of destination plot directory"""
+                do_reset_plot_directory_for_filename ( import_to )
+
+            # rescan farm after changes
+            do_scan_farm ( )
+        else :
+            print ( "* No plots were moved from %s" % (import_from) )
+
+
+def get_results_from_database(sql_query) :
+    db = db_connect ( )
+    c = db.cursor ( )
+    c.execute ( sql_query )
+    data = c.fetchall ( )
+    return data
 
 
 def do_reset_plot_directory_for_filename(filename) :

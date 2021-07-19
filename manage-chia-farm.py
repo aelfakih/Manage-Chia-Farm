@@ -50,7 +50,7 @@ menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available space"
 menu_show_farm_usage = "Show Used Usage"
 menu_resolve_issues = "Resolve Issues Found"
-
+dynamic_menu_resolve_issues = ""
 
 
 def get_chia_farm_plots() :
@@ -355,9 +355,9 @@ if __name__ == '__main__':
         """ add menu options when errors are found """
         issues_found = do_check_for_issues ( )
         if issues_found > 0 :
-            menu_resolve_issues = "%s (%s)" % (menu_resolve_issues,issues_found)
+            dynamic_menu_resolve_issues = "%s (%s)" % (menu_resolve_issues,issues_found)
             menu_options = [Separator ( ) ,
-                            menu_resolve_issues ,
+                            dynamic_menu_resolve_issues ,
                             Separator ( ) ,
                             menu_show_farm_capacity,
                             menu_show_farm_usage,
@@ -403,7 +403,7 @@ if __name__ == '__main__':
             do_import_plots(style)
         elif answers['do'] == menu_verify_plots_and_directories:
             do_scan_farm()
-        elif answers['do'] == menu_resolve_issues:
+        elif answers['do'] == dynamic_menu_resolve_issues:
             do_resolve_issues()
         elif answers['do'] == menu_show_farm_capacity:
             do_show_farm_capacity ( )
