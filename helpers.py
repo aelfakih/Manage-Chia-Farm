@@ -127,6 +127,8 @@ def get_pyinquirer_style() :
 def do_import_plots(style):
     import os , string
     from database import get_results_from_database
+    from database import do_changes_to_database
+
     plots_to_import=[]
     import_action=[]
     drive_size={}
