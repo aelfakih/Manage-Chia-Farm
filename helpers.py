@@ -404,13 +404,7 @@ def do_scan_farm():
                                 scanned = line[0]
                                 indirectory = line[1]
 
-                            if not indirectory:
-                                do_changes_to_database (
-                                    "REPLACE INTO plots (name, path, drive, scan_ukey) values ('%s','%s','%s','%s')" % (
-                                        plot , dir , mount_point , session_id) )
-                                print("* Not in directory")
-                            if not scanned :
-                                print("* new never scanned before...")
+                            if not scanned and not indirectory :
                                 filename = dir + '\\' + plot
                                 plot_size = bytes_to_gib( os.path.getsize ( filename ))
                                 logging.info ( "Checking %s:" % (plot) )
@@ -444,6 +438,13 @@ def do_scan_farm():
 
                             else :
                                 logging.info ( "Plot %s has been previously scanned!" % (plot) )
+                                if not indirectory:
+                                    do_changes_to_database (
+                                        "REPLACE INTO plots (name, path, drive, scan_ukey) values ('%s','%s','%s','%s')" % (
+                                            plot , dir , mount_point , session_id) )
+                                    print(f"* Not in directory {plot} {dir} {mount_point}")
+
+
                         # Commit your changes in the database
                         #db.commit ( )
         else:
