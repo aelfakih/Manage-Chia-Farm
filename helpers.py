@@ -442,8 +442,7 @@ def do_scan_farm():
                                 logging.info ( "Plot %s has been previously scanned!" % (plot) )
                                 if not indirectory:
                                     do_changes_to_database (
-                                        "REPLACE INTO plots (name, path, drive, scan_ukey) values ('%s','%s','%s','%s')" % (
-                                            plot , dir , mount_point , session_id) )
+                                        f"UPDATE plots SET path='{dir}', drive='{mount_point}', scan_ukey='{session_id} WHERE name='{plot}')")
                                     print(f"* Not in directory {plot} {dir} {mount_point}")
 
 
