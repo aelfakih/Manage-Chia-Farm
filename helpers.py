@@ -7,13 +7,8 @@ import shutil
 import yaml
 from tqdm import tqdm, trange
 import logging
-from database import *
 from PyInquirer import style_from_dict, Token, prompt, Separator
-import sqlite3 as sql
 
-def db_connect() :
-    db = sql.connect ( 'db\chia-farm-stats.db' )
-    return db
 
 # cleanup the cli output to avoid confusion when cleaning space
 def indent(symbol,string):
@@ -131,6 +126,7 @@ def get_pyinquirer_style() :
 
 def do_import_plots(style):
     import os , string
+    from database import get_results_from_database
     plots_to_import=[]
     import_action=[]
     drive_size={}
@@ -292,20 +288,6 @@ def do_import_plots(style):
             print ( "* No plots were moved from %s" % (import_from) )
 
 
-def get_results_from_database(sql_query) :
-    db = db_connect ( )
-    c = db.cursor ( )
-    c.execute ( sql_query )
-    data = c.fetchall ( )
-    return data
-
-
-def do_changes_to_database(sql_query) :
-    db = db_connect ( )
-    c = db.cursor ( )
-    c.execute ( sql_query )
-    db.commit()
-    return
 
 
 """ 
@@ -375,12 +357,14 @@ def bytes_to_gib(number) :
     return number
 
 def do_scan_farm():
+    from database import do_changes_to_database
+    from database import get_results_from_database
     from tqdm import tqdm , trange
+
     chia_farm = []
     plot_sizes =[]
     ignore_these = ["$RECYCLE.BIN","System Volume Information"]
-    db = db_connect ( )
-    c = db.cursor ( )
+    session_id = get_session_id()
 
     print ( "Scanning Chia farm..." )
     plot_dirs = get_plot_directories ( )
@@ -398,7 +382,7 @@ def do_scan_farm():
             mount_used = bytes_to_gib(mount_used)
             mount_free = bytes_to_gib(mount_free)
             print(" Directory: Valid |",end="")
-            do_changes_to_database( "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes"))
+            do_changes_to_database( "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes",session_id))
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
                 logging.error("%s plot is offline" % (dir))
@@ -411,10 +395,22 @@ def do_scan_farm():
                 with tqdm ( total=plots_at_location ) as pbar :
                     for plot in arr :
                         pbar.update ( 1 )
+                        scanned = 0
+                        indirectory=0
                         if (plot not in ignore_these) :
-                            c.execute ( "SELECT id FROM plots WHERE name = '%s' and path='%s'" % (plot,dir) )
-                            data = c.fetchall ( )
-                            if len ( data ) == 0 :
+                            #data = get_results_from_database ( "SELECT id FROM plots WHERE name = '%s' and path='%s'" % (plot,dir) )
+                            data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}'")
+                            for line in data:
+                                scanned = line[0]
+                                indirectory = line[1]
+
+                            if not indirectory:
+                                do_changes_to_database (
+                                    "REPLACE INTO plots (name, path, drive, scan_ukey) values ('%s','%s','%s','%s')" % (
+                                        plot , dir , mount_point , session_id) )
+                                print("* Not in directory")
+                            if not scanned :
+                                print("* new never scanned before...")
                                 filename = dir + '\\' + plot
                                 plot_size = bytes_to_gib( os.path.getsize ( filename ))
                                 logging.info ( "Checking %s:" % (plot) )
@@ -440,8 +436,8 @@ def do_scan_farm():
                                         logging.info ( " Plot Type: OG" )
                                         type = "OG"
 
-                                    do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid) values ('%s','%s','%s','%s','%s','%s')" % (
-                                        plot , dir , mount_point , plot_size , type , valid))
+                                    do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (
+                                        plot , dir , mount_point , plot_size , type , valid,session_id))
 
                                 else :
                                     logging.error ( "Chia binary was not found, please check config.yaml setting **" )
@@ -449,17 +445,17 @@ def do_scan_farm():
                             else :
                                 logging.info ( "Plot %s has been previously scanned!" % (plot) )
                         # Commit your changes in the database
-                        db.commit ( )
+                        #db.commit ( )
         else:
             ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
-            do_changes_to_database("REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid) values ('%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No"))
+            do_changes_to_database("REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid,scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No",session_id))
 
     # Commit your changes in the database
-    db.commit ( )
+    #db.commit ( )
     # Closing the connection
-    db.close ( )
+    #db.close ( )
 
 
 def get_chia_binary() :
@@ -468,9 +464,10 @@ def get_chia_binary() :
 
 
 def do_check_for_issues():
+    from database import get_results_from_database
+    from database import do_changes_to_database
+
     issues = 0
-    db = db_connect ( )
-    c = db.cursor ( )
 
     """ Check for invalid plots"""
     data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'No'")
@@ -495,9 +492,10 @@ def do_check_for_issues():
     return issues
 
 def do_resolve_issues():
+    from database import get_results_from_database
+    from database import do_changes_to_database
+
     issues = 0
-    db = db_connect ( )
-    c = db.cursor ( )
     style = get_pyinquirer_style ( )
 
     """ Check for invalid plots"""
@@ -564,8 +562,7 @@ def do_resolve_issues():
     do_scan_farm ( )
 
 def do_show_farm_distribution():
-    db = db_connect ( )
-    c = db.cursor ( )
+    from database import get_results_from_database
     og=0
     nft=0
 
@@ -596,6 +593,7 @@ def do_show_farm_distribution():
                 bool ,
                 {
                     "stacked" : True ,
+                    "custom_tick": u"\u2588",
                     "width" : 40 ,
                     "format" : "{:<5.2f}" ,
                     "no_labels" : True ,
@@ -609,8 +607,7 @@ def do_show_farm_distribution():
 def do_show_farm_capacity():
     from termgraph import termgraph as tg
     from collections import defaultdict
-    db = db_connect ( )
-    c = db.cursor ( )
+    from database import get_results_from_database
     color = tg.AVAILABLE_COLORS
     labels=[]
     used=[]
@@ -641,8 +638,7 @@ def do_show_farm_capacity():
 def do_show_farm_usage():
     from termgraph import termgraph as tg
     from collections import defaultdict
-    db = db_connect ( )
-    c = db.cursor ( )
+    from database import get_results_from_database
     color = tg.AVAILABLE_COLORS
 
     print("* Farm capacity in (plots)")
@@ -661,6 +657,7 @@ def do_show_farm_usage():
                 bool ,
                 {
                     "stacked" : True ,
+                    "custom_tick" : u"\u2588" ,
                     "width" : 60 ,
                     "format" : "{:.0f}" ,
                     "no_labels" : False ,
@@ -684,6 +681,7 @@ def tprint(stacked,labels, values, colors, suffix, **kwargs):
         "stacked": stacked,
         "width": 60,
         "no_labels": False,
+        "custom_tick" : u"\u2588" ,
         "format": "{:<6.2f}",
         "suffix": suffix,
         "vertical": False,
@@ -693,3 +691,17 @@ def tprint(stacked,labels, values, colors, suffix, **kwargs):
     args.update(kwargs)
     data = [[x] for x in values]
     chart(colors=colors, data=data, args=args, labels=labels)
+
+
+def start_new_session():
+    import uuid
+    from database import do_changes_to_database
+    session_id = uuid.uuid4 ( )
+    do_changes_to_database ("DELETE FROM farm_scan")
+    do_changes_to_database ("INSERT INTO farm_scan (initiated_by, scan_ukey) values ('','%s')" % (session_id) )
+    return
+
+def get_session_id():
+    from database import get_results_from_database
+    data = get_results_from_database ( "SELECT scan_ukey FROM farm_scan ;" )
+    return data[0][0]

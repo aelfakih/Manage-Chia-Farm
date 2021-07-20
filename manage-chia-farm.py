@@ -402,6 +402,7 @@ if __name__ == '__main__':
         elif answers['do'] == menu_import_plots:
             do_import_plots(style)
         elif answers['do'] == menu_verify_plots_and_directories:
+            start_new_session()
             do_scan_farm()
         elif answers['do'] == dynamic_menu_resolve_issues:
             do_resolve_issues()
