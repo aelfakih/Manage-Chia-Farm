@@ -89,9 +89,13 @@ Load required libraries using the following command
 # 2. Configuration
 
 Before being able to start using the utility, we need to configure it by editing 
-the config.yaml.
+the config.yaml.  Copy the default config.yaml
 
-Open the the utility configuraiton file and and enter the path to chia's config.yaml 
+`cd Manage-Chia-Farm`
+
+`copy config.yaml.default config.yaml`
+
+Open the configuration file and enter the path to chia's config.yaml 
 into the chia_config_file variable. (the next command is something that you might use. 
 You can use your favorite editor)
 
