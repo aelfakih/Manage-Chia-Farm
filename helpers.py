@@ -606,7 +606,7 @@ def do_scan_farm():
                                 is_nft = "Pool public key: None"
                                 output = []
                                 chia_binary = get_chia_binary ( )
-                                if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) ::
+                                if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) :
                                     output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
                                     # if it is a valid plot, find out if it is NFT or OG
                                     if found in output :
