@@ -506,8 +506,8 @@ def do_import_file_into_farm(src, destination_folder, action):
     dest_total , dest_used , dest_free = shutil.disk_usage ( disk_label )
 
     if dest_free < f_size:
-        logging.info ("* Skipping: not enough space available on %s " % (disk_label))
-        print("* Skipped not enough space at destination")
+        logging.info (f"* Copying was skipped for lack of available space at {disk_label} ")
+        print(f"! Copying was skipped for lack of available space at {disk_label}")
     else:
         num_chunks = f_size // buff + 1
         if is_verbose ( ) :
@@ -606,7 +606,7 @@ def do_scan_farm():
                                 is_nft = "Pool public key: None"
                                 output = []
                                 chia_binary = get_chia_binary ( )
-                                if os.path.exists ( chia_binary ) :
+                                if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) ::
                                     output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
                                     # if it is a valid plot, find out if it is NFT or OG
                                     if found in output :
