@@ -9,55 +9,13 @@ from tqdm import tqdm, trange
 import logging
 from PyInquirer import style_from_dict, Token, prompt, Separator
 
-
-# cleanup the cli output to avoid confusion when cleaning space
-def indent(symbol,string):
-    tab = '    '
-    space = ' '
-    sentence = tab + symbol + space + string
-    return(sentence)
-
-# Python program to get average of a list
-def Average(lst):
-	return sum(lst) / len(lst)
-
-""" For a given pathm find the mount points"""
+#################### Helpers ####################
+""" For a given path/file find the mount point"""
 def find_mount_point(path):
     path = os.path.abspath(path)
     while not os.path.ismount(path):
         path = os.path.dirname(path)
     return path
-
-
-# defrag logic
-def defrag_plots(plot_dirs, average_size):
-    min_storage_available = 9999999999
-    max_storage_available = 0
-
-    counter = 0
-    for dir in plot_dirs:
-        drive = pathlib.Path(dir).parts[0]
-        total, used, free = shutil.disk_usage(drive)
-        # convert to GiB
-        free = bytes_to_gib(free)
-        used = bytes_to_gib(used)
-        calculated_num_of_plots = round(used / average_size)
-        if free > average_size:
-            counter += 1
-            mod = round(free/average_size)
-            print(indent(">", "%s has %s GiB free, good enough for %s plot(s)" % (dir, free, mod)))
-            #print (indent("*","Drive %s (%s): Total %s GiB Used %s GiB Free %s GiB (~%s plots)" % (drive, dir, total // (2**30), used, free , calculated_num_of_plots)))
-            # find the smallest plot available
-            if free < min_storage_available:
-                min_storage_available = free
-                min_storage_drive = drive
-                max_plots_to_fit = mod
-            # find the largest plot available
-            if (free > max_storage_available) and (mod <= max_plots_to_fit) :
-                max_storage_available = free
-                max_storage_drive = drive
-
-    return [counter-2,min_storage_drive,max_storage_drive,max_plots_to_fit]
 
 def get_config(file_path):
     import os
@@ -69,24 +27,19 @@ def get_config(file_path):
     f.close()
     return config
 
-#################### Helpers ####################
-
 def get_mount_point(dir) :
     drive = pathlib.Path ( dir ).parts[0]
     return drive
 
-
 """
 Check if the path we got is online. 
-This case happens in windows where drives could get re-ordered
+This case happens in windows where drives could get re-ordered after a reboot
 """
 def is_plot_online(plot):
     # importing os.path module
     import os.path
 
-    # Check whether the
-    # specified path is an
-    # existing directory or not
+    # Check whether the specified path is an existing directory or not
     isdir = os.path.isdir ( plot )
 
     return isdir
@@ -131,7 +84,6 @@ def do_import_plots(style):
 
     plots_to_import=[]
     import_action=[]
-    drive_size={}
     total_size_gb= 0
     from_drives =[]
     to_drives =[]
@@ -289,9 +241,6 @@ def do_import_plots(style):
         else :
             print ( "* No plots were moved from %s" % (import_from) )
 
-
-
-
 """ 
 Import a file to farm takes as an argument the full plot filename with path
 and the destination folder location.  The method copies the file into
@@ -303,7 +252,6 @@ def do_import_file_into_farm(src, destination_folder, action):
     import shutil , os , sys, time
     from tqdm import tqdm
     basename = os.path.basename ( src )
-    #input_file = 'Q:\\plot-k32-2021-06-22-17-26-8713aa7b1b639ef1b071e1dde2efd86ef12bc592c66f70f9d5c7683a140f3ab6.plot'
     dest = destination_folder + '\\' + basename + '.tmp'
     f_size = os.stat ( src ).st_size
     buff = 10485760  # 1024**2 * 10 = 10M
@@ -347,7 +295,6 @@ def do_import_file_into_farm(src, destination_folder, action):
 
                 print ( f'Done! Copied {bytes_to_gib(f_size)} GiB' )
 
-
 def get_plots_in_list( list ) :
     # find files that have .plot extension
     p = re.compile ( ".*\.plot$" )
@@ -363,8 +310,6 @@ def do_scan_farm():
     from database import get_results_from_database
     from tqdm import tqdm , trange
 
-    chia_farm = []
-    plot_sizes =[]
     ignore_these = ["$RECYCLE.BIN","System Volume Information"]
     session_id = get_session_id()
 
@@ -400,7 +345,6 @@ def do_scan_farm():
                         scanned = 0
                         indirectory=0
                         if (plot not in ignore_these) :
-                            #data = get_results_from_database ( "SELECT id FROM plots WHERE name = '%s' and path='%s'" % (plot,dir) )
                             data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}'")
                             for line in data:
                                 scanned = line[0]
@@ -451,24 +395,15 @@ def do_scan_farm():
                                     print(f"* Not in directory {plot} {dir} {mount_point}")
 
 
-                        # Commit your changes in the database
-                        #db.commit ( )
         else:
             ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
             do_changes_to_database("REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid,scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No",session_id))
 
-    # Commit your changes in the database
-    #db.commit ( )
-    # Closing the connection
-    #db.close ( )
-
-
 def get_chia_binary() :
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
     return chia_binary
-
 
 def do_check_for_issues():
     from database import get_results_from_database
@@ -581,8 +516,6 @@ def do_show_farm_distribution():
         else:
             og = line[0]
 
-    #print (data, nft, og)
-
     from termgraph import termgraph as tg
     from collections import defaultdict
     C = tg.AVAILABLE_COLORS
@@ -601,15 +534,14 @@ def do_show_farm_distribution():
                 {
                     "stacked" : True ,
                     "custom_tick": u"\u2588",
-                    "width" : 40 ,
+                    "width" : 20 ,
                     "format" : "{:<5.2f}" ,
-                    "no_labels" : True ,
+                    "no_labels" : False ,
                     "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
                 } ,
             ) ,
-            labels=[""] ,
+            labels=["> Chia Farm Distribution"] ,
         )
-
 
 def do_show_farm_capacity():
     from termgraph import termgraph as tg
@@ -620,7 +552,10 @@ def do_show_farm_capacity():
     used=[]
     free=[]
 
-    print("* Farm capacity in (plots)")
+    print("* ----------------------------------------------------------------------")
+    print("* Farm Capacity:")
+    print("* Plot Directory | Bar Graph | Capacity (# plots) ")
+    print("* ----------------------------------------------------------------------")
     """ Check for invalid plots"""
     data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'Yes'")
     if data:
@@ -641,21 +576,28 @@ def do_show_farm_capacity():
     else:
         print ("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots..." )
 
-
 def do_show_farm_usage():
     from termgraph import termgraph as tg
     from collections import defaultdict
     from database import get_results_from_database
     color = tg.AVAILABLE_COLORS
 
-    print("* Farm capacity in (plots)")
+    print("* ----------------------------------------------------------------------")
+    print("* Farm Usage:")
+    print("* Plot Directory | Percent Usage | Bar Graph | Total GiB | Plot Capacity")
+    print("* ----------------------------------------------------------------------")
+
     """ Check for invalid plots"""
     data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'Yes'")
     for line in data:
         path = line[1]
         used = line[4]
         free = line[5]
-
+        pct_used = (used / (used + free)) * 100
+        if free < 100.5:
+            drive_full = "[FULL]"
+        else:
+            drive_full = f"[{round(free/101.5)} Plots]"
 
         tg.chart (
             colors=[color["magenta"] , color["green"]] ,
@@ -665,21 +607,14 @@ def do_show_farm_usage():
                 {
                     "stacked" : True ,
                     "custom_tick" : u"\u2588" ,
-                    "width" : 60 ,
+                    "width" : 20 ,
                     "format" : "{:.0f}" ,
                     "no_labels" : False ,
-                    "suffix" : f" GiB Total | Used {used:.1f} GiB | Free {free:.1f} GiB"
+                    "suffix" : f" GiB  {drive_full}"
                 } ,
             ) ,
-            labels=[path.ljust(25)] ,
+            labels=[f"{path.ljust(25)} Usage:{pct_used:.2f}%"] ,
         )
-
-
-#    print(labels,used)
-#    colors = [color["magenta"],color["yellow"]]
-#    suffix =" GiB used"
-#    tprint ( True, labels , used , colors, suffix, format="{:<3.2f}" )
-
 
 def tprint(stacked,labels, values, colors, suffix, **kwargs):
     from termgraph.termgraph import chart
@@ -699,7 +634,6 @@ def tprint(stacked,labels, values, colors, suffix, **kwargs):
     data = [[x] for x in values]
     chart(colors=colors, data=data, args=args, labels=labels)
 
-
 def start_new_session():
     import uuid
     from database import do_changes_to_database
@@ -712,3 +646,44 @@ def get_session_id():
     from database import get_results_from_database
     data = get_results_from_database ( "SELECT scan_ukey FROM farm_scan ;" )
     return data[0][0]
+
+
+
+#################### NOT ready to be used  ###################
+# cleanup the cli output to avoid confusion when cleaning space
+def indent(symbol,string):
+    tab = '    '
+    space = ' '
+    sentence = tab + symbol + space + string
+    return(sentence)
+
+
+""" TBD defrag logic to compact (not used yet)"""
+def defrag_plots(plot_dirs, average_size):
+    min_storage_available = 9999999999
+    max_storage_available = 0
+
+    counter = 0
+    for dir in plot_dirs:
+        drive = pathlib.Path(dir).parts[0]
+        total, used, free = shutil.disk_usage(drive)
+        # convert to GiB
+        free = bytes_to_gib(free)
+        used = bytes_to_gib(used)
+        calculated_num_of_plots = round(used / average_size)
+        if free > average_size:
+            counter += 1
+            mod = round(free/average_size)
+            print(indent(">", "%s has %s GiB free, good enough for %s plot(s)" % (dir, free, mod)))
+            # find the smallest plot available
+            if free < min_storage_available:
+                min_storage_available = free
+                min_storage_drive = drive
+                max_plots_to_fit = mod
+            # find the largest plot available
+            if (free > max_storage_available) and (mod <= max_plots_to_fit) :
+                max_storage_available = free
+                max_storage_drive = drive
+
+    return [counter-2,min_storage_drive,max_storage_drive,max_plots_to_fit]
+
