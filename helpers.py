@@ -413,24 +413,29 @@ def do_scan_farm():
                                 logging.info ( " Size: %s |" % (plot_size) )
 
                                 found = "Found 1 valid plots"
-                                is_og = "Pool public key: None"
+                                is_nft = "Pool public key: None"
                                 output = []
                                 chia_binary = get_chia_binary ( )
                                 if os.path.exists ( chia_binary ) :
                                     output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
+                                    # if it is a valid plot, find out if it is NFT or OG
                                     if found in output :
-                                        logging.info ( "Plot Valid: Yes" )
+                                        logging.info ( f"{plot} Plot Valid: Yes" )
                                         valid = "Yes"
-                                    else :
-                                        logging.info ( " Plot Valid: No" )
-                                        valid = "No"
 
-                                    if is_og in output :
-                                        logging.info ( " Plot Type: NFT" )
-                                        type = "NFT"
+                                        if is_nft in output :
+                                            logging.info ( f"{plot} Plot Type: NFT" )
+                                            type = "NFT"
+                                        else :
+                                            logging.info ( f"{plot} Plot Type: OG" )
+                                            type = "OG"
+
                                     else :
-                                        logging.info ( " Plot Type: OG" )
-                                        type = "OG"
+                                        logging.info ( f"{plot} Plot Valid: No" )
+                                        logging.info ( f"{plot} Plot Type: Not Applicable" )
+                                        valid = "No"
+                                        type = "NA"
+
 
                                     do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (
                                         plot , dir , mount_point , plot_size , type , valid,session_id))
