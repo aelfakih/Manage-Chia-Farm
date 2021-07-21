@@ -1,5 +1,7 @@
 import os
 import sqlite3 as sql
+import logging
+
 
 def initialize_database() :
     """ Define the Database connection """
@@ -29,22 +31,31 @@ def initialize_database() :
     print("* Initializing Database...")
 
 def get_results_from_database(sql_query) :
+    from helpers import is_verbose
     db = db_connect ( )
     c = db.cursor ( )
     c.execute ( sql_query )
     data = c.fetchall ( )
+    if is_verbose ( ) :
+        logging.info ( sql_query )
     return data
 
 
 def do_changes_to_database(sql_query) :
+    from helpers import is_verbose
     db = db_connect ( )
     c = db.cursor ( )
     c.execute ( sql_query )
+    if is_verbose ( ) :
+        logging.info ( sql_query )
     db.commit()
     return
 
 def db_connect() :
     db = sql.connect ( 'db\chia-farm-stats.db' )
     return db
+
+
+
 
 

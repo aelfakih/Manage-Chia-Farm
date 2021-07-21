@@ -5,11 +5,256 @@ import re
 import sys
 import shutil
 import yaml
+import collections
 from tqdm import tqdm, trange
 import logging
 from PyInquirer import style_from_dict, Token, prompt, Separator
 
+#####  Needs cleanup #####
+def get_chia_farm_plots() :
+    chia_farm = []
+    plot_sizes =[]
+    plot_dirs = get_plot_directories()
+    ignore_these = ["$RECYCLE.BIN","System Volume Information"]
+    """ Scan through the farm to build chia_farm (database) """
+    for directory in plot_dirs :
+        if os.path.isdir (directory):
+            arr = os.listdir( directory )
+            for plot in arr :
+                if plot not in ignore_these:
+                    filename = directory + '\\' + plot
+                    if os.path.isfile(filename):
+                        chia_farm.append ( filename )
+                        plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
+        else:
+            logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
+    # sort chia_farm
+    chia_farm.sort ( )
+    return chia_farm
+
+def get_non_plots_in_farm( chia_farm ) :
+    plot_list =[]
+
+    # find files that have .plot extension
+    p = re.compile ( ".*\.plot$" )
+
+    # find symmetric difference.
+    plot_list = list ( filter ( p.match , chia_farm ) )
+
+   # find symmetric difference.
+    non_plot_list = set ( plot_list ).symmetric_difference ( chia_farm )
+    return non_plot_list
+
+def get_duplicte_plotnames(plot_dirs) :
+    # Load plot_ dictionaries from farm directories
+    duplicate_plotnames=[]
+    plotnames=[]
+    plot_path={}
+    plot_count={}
+    ignore_these = ["$RECYCLE.BIN","System Volume Information"]
+    for dir in plot_dirs :
+        if os.path.isdir ( dir ) :
+            arr = os.listdir ( dir )
+            for plot in arr :
+                """ Skip Windows recycle and volume files"""
+                if plot not in ignore_these:
+                    plotnames.append ( plot )
+                    if plot_path.get ( plot ) :
+                        # print ("Duplicate %s %s %s" % (plot_path.get(plot),dir,plot))
+                        plot_path[plot] = "%s , %s" % (plot_path.get ( plot ) , dir)
+                        plot_count[plot] = plot_count.get ( plot ) + 1
+                        plot_count[plot] = plot_count.get ( plot ) + 1
+                    else :
+                        plot_path[plot] = dir
+                        plot_count[plot] = 1
+    duplicate_plotnames = ([item for item , count in collections.Counter ( plotnames ).items ( ) if count > 1])
+    return duplicate_plotnames, plot_path
+
+def find_non_plots() :
+    from database import do_changes_to_database
+    from PyInquirer import prompt , Separator
+    session_id = get_session_id()
+
+    total_size_GiB = 0
+    chia_farm = get_chia_farm_plots ( )
+    """ [1] Find and remove NON-PLOTS """
+
+    print ( "* Checking for non-plots files (without a '.plot' extension) ... " , end="" )
+
+    """ Get the non plots in the farm """
+    non_plot_list = get_non_plots_in_farm ( chia_farm )
+
+    if non_plot_list :
+        number_of_files = len ( non_plot_list )
+        print ( "[NOK]" )
+        print ( indent ( "*" , "WARNING! Found %s non-plot files in farm." % (number_of_files) ) )
+        for file in non_plot_list :
+            size_GiB = bytes_to_gib(os.path.getsize ( file ))
+            total_size_GiB += size_GiB
+            print ( indent ( ">" , "%s (%s GiB)" % (file , size_GiB) ) )
+            do_changes_to_database (
+                f"REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('{os.path.basename(file)}','{os.path.dirname(file)}\','{find_mount_point ( file )}','{size_GiB}','?','No','{session_id}')")
+
+
+        """ Get feedback from farmer (default is do not delete) """
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'message' : "Do you want to DELETE NON-PLOT files and save %s GB of storage space?" % (total_size_GiB) ,
+                'name' : 'delete_non_plots' ,
+                'default' : False ,
+            }
+        ]
+        answers = prompt ( questions )
+        if answers['delete_non_plots'] :
+            for file in non_plot_list :
+                if os.path.isfile ( file ) :
+                    os.remove ( file )
+                    print ( indent ( "*" , "Deleting:  %s" % file ) )
+                    if is_verbose ( ) :
+                        logging.info ( "Deleting:  %s" % file )
+        else :
+            print ( indent ( "*" , "Skipping. No files deleted!" ) )
+    else :
+        print ( "[OK] None found!" )
+        if is_verbose ( ) :
+            logging.info ( "No non-plots files found!" )
+
+""" 
+Find plots with the same name in the farm, 
+so that we can prunce the farm and maintain 
+only one copy
+"""
+def find_duplicate_plots() :
+    from PyInquirer import prompt , Separator
+    largest_capacity = 0
+
+    print ( "* Checking for duplicate plot filenames ... " , end="" )
+
+    """ Get the duplicate plotnames """
+    duplicate_plotnames , plot_path = get_duplicte_plotnames ( get_plot_directories ( ) )
+
+    if duplicate_plotnames :
+        number_of_files = len ( duplicate_plotnames )
+        print ( "[NOK]" )
+        print ( indent ( "*" , "WARNING! Found %s plots with multiple copies" % (number_of_files) ) )
+        for file in duplicate_plotnames :
+            print ( indent ( ">" , "%s  (%s)" % (file , plot_path[file]) ) )
+
+        """ Get feedback from farmer (default is do not delete) """
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'message' : "Do you want to DELETE DUPLICATE files?" ,
+                'name' : 'delete_duplicates' ,
+                'default' : False ,
+            }
+        ]
+        answers = prompt ( questions )
+        if answers['delete_duplicates'] :
+            for file in duplicate_plotnames :
+                plot_locations = plot_path[file].split ( "," )
+                count = 0
+                """ Remove the file where there is a LOT of free space (so we keep the farm plots consolidated) """
+                for dir in plot_locations :
+                    size = get_free_space_GiB ( dir.strip ( ) )
+                    if size > largest_capacity :
+                        largest_capacity = size
+                        remove_from_drive = dir
+
+                file_to_delete = remove_from_drive.strip ( ) + '\\' + file
+                print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
+                os.remove ( file_to_delete )
+                if is_verbose ( ) :
+                    logging.info ( "Deleting [%s]" % (file_to_delete) )
+        else :
+            print ( indent ( "*" , "Skipping. No files deleted!" ) )
+    else :
+        print ( "[OK] None found!" )
+        if is_verbose ( ) :
+            logging.info ( "No duplicate names files found!" )
+
+def get_smallest_plot ( ):
+    plot_dirs = get_plot_directories ( )
+    min_storage_available = 9999999999
+    average_size = 106300000
+    counter = 0
+    for dir in plot_dirs:
+        drive = get_letter_drive ( dir )
+        total, used, free = shutil.disk_usage(drive)
+        # convert to GiB
+        free = free // (2**30)
+        used = used // (2**30)
+        calculated_num_of_plots = round(used / average_size)
+        if free > average_size:
+            counter += 1
+            mod = round(free/average_size)
+            if is_verbose():
+                logging.info("%s has %s GiB free, good enough for %s plot(s)" % (dir, free, mod))
+            # find the smallest plot available
+            if free < min_storage_available:
+                min_storage_available = free
+                min_storage_drive = dir
+                max_plots_to_fit = mod
+    if is_verbose():
+        logging.info("Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
+    return min_storage_drive, max_plots_to_fit
+
+def get_destination_capacity ( dir ):
+    plot_dirs = get_plot_directories ( )
+    min_storage_available = 9999999999
+    max_plots_to_fit = min_storage_drive = 0
+    average_size = 106300000
+    counter = 0
+
+    drive = pathlib.Path ( dir ).parts[0]
+    total , used , free = shutil.disk_usage ( drive )
+    # convert to GiB
+    free = free // (2 ** 30)
+    used = used // (2 ** 30)
+    calculated_num_of_plots = round ( used / average_size )
+    print(drive, total, used, free, calculated_num_of_plots)
+    if free > average_size :
+        counter += 1
+        mod = round ( free / average_size )
+        if is_verbose ( ) :
+            logging.info ( "%s has %s GiB free, good enough for %s plot(s)" % (dir , free , mod) )
+        # find the smallest plot available
+        if free < min_storage_available :
+            min_storage_available = free
+            min_storage_drive = dir
+            max_plots_to_fit = mod
+
+    if is_verbose():
+        logging.info("Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
+    return min_storage_drive, max_plots_to_fit
+
 #################### Helpers ####################
+def print_top_menu() :
+    # Clear Screen to start ...
+    clear = lambda : os.system ( 'cls' )
+    clear ( )
+    print (
+        'Manage-Chia-Farm | Manage your Chia farm like a Pro' )
+    print ( 'by Adonis Elfakih 2021, https://github.com/aelfakih/Manage-Chia-Farm\n' )
+
+def initialize_me() :
+    from database import initialize_database
+
+    """ Set Up the SQLite database """
+    initialize_database ( )
+
+    """ Get the plots that the Chia farm is farming """
+    plot_dirs = get_plot_directories ( )
+    if is_verbose ( ) :
+        logging.info ( "Scanning the following plot directories: %s" % (plot_dirs) )
+    """ Get the plots available in the farm """
+    chia_farm = get_chia_farm_plots ( )
+    number_of_plots = len ( chia_farm )
+    print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted to this machine!" )
+    if is_verbose ( ) :
+        logging.info ( "Found %s files in farm" % (number_of_plots) )
+
 """ For a given path/file find the mount point"""
 def find_mount_point(path):
     path = os.path.abspath(path)
@@ -26,10 +271,6 @@ def get_config(file_path):
     config = yaml.load(stream=f, Loader=yaml.Loader)
     f.close()
     return config
-
-def get_mount_point(dir) :
-    drive = pathlib.Path ( dir ).parts[0]
-    return drive
 
 """
 Check if the path we got is online. 
@@ -84,7 +325,7 @@ def do_import_plots(style):
 
     plots_to_import=[]
     import_action=[]
-    total_size_gb= 0
+    total_size_GiB= 0
     from_drives =[]
     to_drives =[]
 
@@ -152,11 +393,16 @@ def do_import_plots(style):
         for root , dirs , files in os.walk ( import_from ) :
             for file in files :
                 if file.endswith ( ".plot" ) :
+                    type="Unverified"
+                    data = get_results_from_database(f"SELECT type FROM plots WHERE name ='{file}'")
+                    if len(data) > 0:
+                        for line in data:
+                            type = line[0]
                     filename = root + '\\' + file
                     plots_to_import.append ( filename )
-                    size_gb = bytes_to_gib ( os.path.getsize ( filename ))
-                    total_size_gb += size_gb
-                    print (">" , "%s (%s GiB)" % (filename , size_gb) )
+                    size_GiB = bytes_to_gib ( os.path.getsize ( filename ))
+                    total_size_GiB += size_GiB
+                    print (f"> {filename} ({size_GiB} GiB)  (Format: {type})")
 
         questions = [
             {
@@ -196,10 +442,10 @@ def do_import_plots(style):
             # convert to GiB
             free = bytes_to_gib(free)
             used = bytes_to_gib(used)
-            total_size_gb = round(total_size_gb,0)
+            total_size_GiB = round(total_size_GiB,0)
 
-        if free < total_size_gb:
-            print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_gb, free))
+        if free < total_size_GiB:
+            print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_GiB, free))
             print ("* You can move the remaining plots to a different destination later by re-running this utility. ")
 
         if import_decision == True :
@@ -417,17 +663,18 @@ def do_check_for_issues():
         logging.error ("Found %s invalid plot-directory definitions in chia's config.yaml file" % (len ( data )))
         issues += len(data)
 
-    """ Check fir invalid plots"""
+    """ Check for invalid plots"""
     data = get_results_from_database("SELECT * FROM plots WHERE valid = 'No'")
     invalid_plots =0
     if len ( data ) > 0 :
         for line in data:
             path = line[2]
             file = line[1]
-            filename = path + file
+            filename = path + "\\" + file
             if os.path.isfile(filename):
                 invalid_plots += 1
             else:
+                print(f"! File:{filename} is not a valid entry in Database! Deleteing it form id # {line[0]}")
                 do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
         logging.error ("Found %s invalid plots in farm" % (issues))
     issues += invalid_plots
@@ -491,7 +738,7 @@ def do_resolve_issues():
             for line in data :
                 path = line[2]
                 file = line[1]
-                filename = path + file
+                filename = path + "\\" + file
                 os.remove ( filename )
                 do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
                 # reset the plot_directory_stats for the removed files
@@ -540,7 +787,7 @@ def do_show_farm_distribution():
                     "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
                 } ,
             ) ,
-            labels=["> Chia Farm Distribution"] ,
+            labels=["> Chia NFT/OG Plot Distribution"] ,
         )
 
 def do_show_farm_capacity():
