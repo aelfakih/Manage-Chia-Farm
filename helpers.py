@@ -230,6 +230,92 @@ def get_destination_capacity ( dir ):
     return min_storage_drive, max_plots_to_fit
 
 #################### Helpers ####################
+def get_colorama_fgcolor(color) :
+    from colorama import Fore , Back , Style
+    if color in "BLACK" :
+        return Fore.BLACK
+    if color in "GREEN" :
+        return Fore.GREEN
+    if color in "RED" :
+        return Fore.RED
+    if color in "YELLOW" :
+        return Fore.YELLOW
+    if color in "BLUE" :
+        return Fore.BLUE
+    if color in "MAGENTA" :
+        return Fore.MAGENTA
+    if color in "CYAN" :
+        return Fore.CYAN
+    if color in "WHITE" :
+        return Fore.WHITE
+
+def get_colorama_bgcolor(color) :
+    from colorama import Fore , Back , Style
+    if color in "BLACK" :
+        return Back.BLACK
+    if color in "GREEN" :
+        return Back.GREEN
+    if color in "RED" :
+        return Back.RED
+    if color in "YELLOW" :
+        return Back.YELLOW
+    if color in "BLUE" :
+        return Back.BLUE
+    if color in "MAGENTA" :
+        return Back.MAGENTA
+    if color in "CYAN" :
+        return Back.CYAN
+    if color in "WHITE" :
+        return Back.WHITE
+
+
+def stacked_bar_chart(data , max_length) :
+    from colorama import Fore , Back , Style
+    from colorama import init
+    init ( )
+
+    segment_one_length = data[0][0]
+    segment_one_color = data[0][1]
+    segment_one_label = data[0][2]
+
+    segment_two_length = data[1][0]
+    segment_two_color = data[1][1]
+    segment_two_label = data[1][2]
+
+    line_label = data[2][0]
+    label_style = data[2][1] # accepts: both, percent, count, none
+
+    segment_one_percent = 100 * segment_one_length / (segment_two_length + segment_one_length)
+    segment_two_percent = 100 * segment_two_length / (segment_two_length + segment_one_length)
+
+    segment_one_normalized = round ( (segment_one_length / (segment_one_length + segment_two_length)) * max_length )
+
+    for i in range ( max_length ) :
+        if i <= segment_one_normalized :
+            sys.stdout.write (  get_colorama_fgcolor ( segment_one_color )+  u"\u2588" )
+        if i > segment_one_normalized :
+            sys.stdout.write ( get_colorama_fgcolor ( segment_two_color ) + u"\u2588" )
+        sys.stdout.flush ( )
+
+
+    #print Legend
+    sys.stdout.write ( Fore.RESET +  " : " )
+    sys.stdout.write (  Fore.RESET + get_colorama_bgcolor ( segment_one_color )+  f"{segment_one_label}" )
+    if label_style in "both" or label_style in "count":
+        sys.stdout.write (  Fore.RESET + Back.RESET +  f" {segment_one_length}" )
+    if label_style in "both" or label_style in "percent" :
+        sys.stdout.write (  Fore.RESET + Back.RESET +  f" {segment_one_percent:3.0f}%" )
+
+    sys.stdout.write ( Fore.RESET +  " : " )
+    sys.stdout.write (  Fore.RESET + get_colorama_bgcolor ( segment_two_color )+  f"{segment_two_label}" )
+    if label_style in "both" or label_style in "count":
+        sys.stdout.write ( Fore.RESET + Back.RESET + f" {segment_two_length}" )
+    if label_style in "both" or label_style in "percent" :
+        sys.stdout.write ( Fore.RESET + Back.RESET + f" {segment_two_percent:3.0f}%" )
+    if line_label:
+        sys.stdout.write ( Fore.RESET + Back.RESET + f" : {line_label}" )
+    print ( Style.RESET_ALL )
+
 def print_top_menu() :
     # Clear Screen to start ...
     clear = lambda : os.system ( 'cls' )
@@ -783,6 +869,10 @@ def do_show_farm_distribution():
     og=0
     nft=0
 
+    print("*--------------------------------------------------------------")
+    print("* Farm Plot Type Distribution")
+    print("*--------------------------------------------------------------")
+
     """ Check for invalid plots"""
     data = get_results_from_database("SELECT count(*), type FROM plots WHERE valid = 'Yes' GROUP BY type")
     for line in data:
@@ -791,45 +881,22 @@ def do_show_farm_distribution():
         else:
             og = line[0]
 
-    from termgraph import termgraph as tg
-    from collections import defaultdict
-    C = tg.AVAILABLE_COLORS
-
     if (nft == 0) and (og == 0):
         print("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots...")
     else:
-        nft_pct = (nft/(nft+og)) * 100
-        og_pct = (og/(nft+og)) * 100
+        data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both"]]
+        stacked_bar_chart ( data , 40 )
 
-        tg.chart (
-            colors=[C["green"] , C["yellow"]] ,
-            data=[[nft , og]] ,
-            args=defaultdict (
-                bool ,
-                {
-                    "stacked" : True ,
-                    "custom_tick": u"\u2588",
-                    "width" : 20 ,
-                    "format" : "{:<5.2f}" ,
-                    "no_labels" : False ,
-                    "suffix" : f" (NFT:{nft} ({nft_pct:.0f}%), OG:{og} ({og_pct:.0f}%))"
-                } ,
-            ) ,
-            labels=["> Chia NFT/OG Plot Distribution"] ,
-        )
 
 def do_show_farm_capacity():
-    from termgraph import termgraph as tg
-    from collections import defaultdict
     from database import get_results_from_database
-    color = tg.AVAILABLE_COLORS
     labels=[]
     used=[]
     free=[]
 
     print("* ----------------------------------------------------------------------")
     print("* Farm Capacity:")
-    print("* Plot Directory | Bar Graph | Capacity (# plots) ")
+    print("* Plot Directory            | Capacity (# plots) ")
     print("* ----------------------------------------------------------------------")
     """ Check for invalid plots"""
     data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'Yes'")
@@ -839,23 +906,12 @@ def do_show_farm_capacity():
 
             # if the free space is greater than an average k32 (101.5 GiB) plot then show availability
             if line[5] > 101.5:
-                free.append(round(line[5]/101.5))
-                used.append(line[4])
-                labels.append(path.ljust(25))
-
-
-        #print(labels,free)
-        colors = [color["green"]]
-        suffix ="available plot space(s)"
-        tprint ( False, labels , free , colors, suffix, format="{:<5.0f}" )
+                print(f"> {path.ljust ( 25 )} | Space for [{round(line[5]/101.5):3.0f}] k32 plots available")
     else:
         print ("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots..." )
 
 def do_show_farm_usage():
-    from termgraph import termgraph as tg
-    from collections import defaultdict
     from database import get_results_from_database
-    color = tg.AVAILABLE_COLORS
 
     print("* ----------------------------------------------------------------------")
     print("* Farm Usage:")
@@ -874,40 +930,10 @@ def do_show_farm_usage():
         else:
             drive_full = f"[{round(free/101.5)} Plots]"
 
-        tg.chart (
-            colors=[color["magenta"] , color["green"]] ,
-            data=[[used , free]] ,
-            args=defaultdict (
-                bool ,
-                {
-                    "stacked" : True ,
-                    "custom_tick" : u"\u2588" ,
-                    "width" : 20 ,
-                    "format" : "{:.0f}" ,
-                    "no_labels" : False ,
-                    "suffix" : f" GiB  {drive_full}"
-                } ,
-            ) ,
-            labels=[f"{path.ljust(25)} Usage:{pct_used:.2f}%"] ,
-        )
-
-def tprint(stacked,labels, values, colors, suffix, **kwargs):
-    from termgraph.termgraph import chart
-
-    args = {
-        "stacked": stacked,
-        "width": 60,
-        "no_labels": False,
-        "custom_tick" : u"\u2588" ,
-        "format": "{:<6.2f}",
-        "suffix": suffix,
-        "vertical": False,
-        "histogram": False,
-        "no_values": False,
-    }
-    args.update(kwargs)
-    data = [[x] for x in values]
-    chart(colors=colors, data=data, args=args, labels=labels)
+        data=[[used,"RED","Used"],
+              [free,"GREEN","Free"],
+              [path.ljust(25) + drive_full,"percent"]]
+        stacked_bar_chart ( data , 40 )
 
 def start_new_session():
     import uuid
