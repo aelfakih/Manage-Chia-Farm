@@ -736,20 +736,20 @@ def do_scan_farm():
     After the scan, let us do some garbage collection of 
     records left behind from plots that are not longer attached to farm
     """
-    data = get_results_from_database(f"SELECT path FROM plots WHERE scan_ukey != '{session_id}'")
+    data = get_results_from_database(f"SELECT path FROM plot_directory WHERE scan_ukey != '{session_id}'")
     if len(data) > 0:
         print("! Detected plot directories in database but not in Chia's config.yaml file")
         print("* Cleaning up the plot directories and associated plot names from database")
         for record in data:
             path = record[0]
-            logging.info(f"DELETE FROM plots WHERE path = '{path}'")
-            do_changes_to_database(f"DELETE FROM plots WHERE path = '{path}'")
+            logging.info(f"DELETE FROM plot_directory WHERE path = '{path}'")
+            do_changes_to_database(f"DELETE FROM plot_directory WHERE path = '{path}'")
 
     """
     Let us scan the database and check that the files are still there,
     otherwise remove entry
     """
-    data = get_results_from_database(f"SELECT id,name FROM plot_directory WHERE scan_ukey != '{session_id}'")
+    data = get_results_from_database(f"SELECT id,name FROM plots WHERE scan_ukey != '{session_id}'")
     if len(data) > 0:
         print ("* Scanning farm for deleted or moved files...")
         for record in data:
@@ -758,7 +758,7 @@ def do_scan_farm():
             if not os.path.exists(filename):
                 print(f"! {filename} not found! removing from database...")
             else:
-                do_changes_to_database(f"UPDATE plot_directory SET scan_ukey = '{session_id}' WHERE id = {id}")
+                do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
 
 
 def get_chia_binary() :
