@@ -762,6 +762,20 @@ def do_scan_farm():
             else:
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
 
+    data = get_results_from_database(f"SELECT id,name,path FROM plots WHERE scan_ukey != '{session_id}'")
+    if len(data) > 0:
+        print ("* Scanning farm for deleted or moved files...")
+        for record in data:
+            id = record[0]
+            filename= record[2] + "\\" + record[1]
+            print (id, filename)
+            if not os.path.exists(filename):
+                logging.info(f"! {filename} not found! removing from plots database")
+                print(f"DELETE FROM plots WHERE name = '{record[1]}'")
+                do_changes_to_database ( f"DELETE FROM plots WHERE name = '{record[1]}'" )
+            else:
+                do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
+
 
 def get_chia_binary() :
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
