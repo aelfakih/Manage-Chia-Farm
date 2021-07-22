@@ -1,0 +1,8 @@
+# location of Chia's configuration file. It is used to navigate the plots directories
+chia_config_file: C:\Users\Admin\.chia\mainnet\config\config.yaml
+# location of chia executable, used when importing plots to verify that they belong to this farm
+chia_binary: C:\Users\Admin\AppData\Local\chia-blockchain\app-1.2.0\resources\app.asar.unpacked\daemon\chia.exe
+# when verbose is true, the program outputs extra information into log\audit.log
+verbose: true
+
+
