@@ -283,10 +283,13 @@ def stacked_bar_chart(data , max_length) :
     segment_two_label = data[1][2]
 
     line_label = data[2][0]
-    label_style = data[2][1] # accepts: both, percent, count, none
+    label_style = data[2][1] # Label Style: accepts: both, percent, count, none
+    label_total = data[2][2] # Add Total: accepts: Yes, No
+
 
     segment_one_percent = 100 * segment_one_length / (segment_two_length + segment_one_length)
     segment_two_percent = 100 * segment_two_length / (segment_two_length + segment_one_length)
+    total_segments = segment_two_length + segment_one_length
 
     segment_one_normalized = round ( (segment_one_length / (segment_one_length + segment_two_length)) * max_length )
 
@@ -299,6 +302,9 @@ def stacked_bar_chart(data , max_length) :
 
 
     #print Legend
+    sys.stdout.write ( Fore.RESET )
+    if label_total in "Yes":
+        sys.stdout.write ( f" Total: {total_segments:.0f} >"  )
     sys.stdout.write ( Fore.RESET +  " : " )
     sys.stdout.write (  Fore.RESET + get_colorama_bgcolor ( segment_one_color )+  f"{segment_one_label}" )
     if label_style in "both" or label_style in "count":
@@ -898,7 +904,7 @@ def do_show_farm_distribution():
     if (nft == 0) and (og == 0):
         print("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots...")
     else:
-        data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both"]]
+        data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both","Yes"]]
         stacked_bar_chart ( data , 40 )
 
 
@@ -929,7 +935,7 @@ def do_show_farm_usage():
 
     print("* ----------------------------------------------------------------------")
     print("* Farm Usage:")
-    print("* Plot Directory | Percent Usage | Bar Graph | Total GiB | Plot Capacity")
+    print("* Bar Graph (Usage)                 | Total GiB > Legend : Plot Directory [Capacity]")
     print("* ----------------------------------------------------------------------")
 
     """ Check for invalid plots"""
@@ -946,7 +952,7 @@ def do_show_farm_usage():
 
         data=[[used,"RED","Used"],
               [free,"GREEN","Free"],
-              [path.ljust(25) + drive_full,"percent"]]
+              [path.ljust(25) + drive_full,"percent","Yes"]]
         stacked_bar_chart ( data , 40 )
 
 def start_new_session():
