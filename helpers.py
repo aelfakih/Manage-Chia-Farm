@@ -642,10 +642,25 @@ def do_scan_farm():
 
 
         else:
-            ## TO DO , ask if you want to fix chia config file
             print ( " Directory: In-Valid |" , end="" )
             logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (dir))
             do_changes_to_database("REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid,scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (dir , "" , 0, 0,0, "No",session_id))
+
+    """
+    After the scan, let us do some garbage collection of 
+    records left behind from plots that are not longer attached to farm
+    """
+    data = get_results_from_database(f"SELECT path FROM plots WHERE scan_ukey != '{session_id}'")
+    if len(data) > 0:
+        print("! Detected plot directories in database but not in Chia's config.yaml file")
+        print("* Cleaning up the plot directories and associated plot names from database")
+        for record in data:
+            path = record[0]
+            logging.info(f"DELETE FROM plots WHERE path = '{path}'")
+            do_changes_to_database(f"DELETE FROM plots WHERE path = '{path}'")
+            logging.info(f"DELETE FROM plot_directory WHERE path = '{path}'")
+            do_changes_to_database(f"DELETE FROM plot_directory WHERE path = '{path}'")
+
 
 def get_chia_binary() :
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
