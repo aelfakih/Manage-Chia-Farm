@@ -748,14 +748,15 @@ def do_scan_farm():
     Let us scan the database and check that the files are still there,
     otherwise remove entry
     """
-    data = get_results_from_database(f"SELECT id,name FROM plots WHERE scan_ukey != '{session_id}'")
+    data = get_results_from_database(f"SELECT id,name,path FROM plots WHERE scan_ukey != '{session_id}'")
     if len(data) > 0:
         print ("* Scanning farm for deleted or moved files...")
         for record in data:
             id = record[0]
-            filename= record[1]
+            filename= record[2] + "\\" + record[1]
             if not os.path.exists(filename):
                 print(f"! {filename} not found! removing from database...")
+                #do_changes_to_database ( f"DELETE FROM plots SET WHERE id = {id}" )
             else:
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
 
