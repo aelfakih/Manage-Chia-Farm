@@ -808,7 +808,7 @@ def do_check_for_issues():
             if os.path.isfile(filename):
                 invalid_plots += 1
             else:
-                print(f"! File:{filename} is not a valid entry in Database! Deleteing it form id # {line[0]}")
+                logging.info(f"! File:{filename} is not a valid entry in Database! Deleteing it form id # {line[0]}")
                 do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
         logging.error ("Found %s invalid plots in farm" % (issues))
     issues += invalid_plots
