@@ -101,12 +101,19 @@ You can use your favorite editor)
 
 `PS C:\Users\USERNAME\Manage-Chia-Farm> notepad.exe config.yaml`
 
-Then edit the chia_config_file variable. The format is usually something like 
+Edit the chia_config_file variable. The format is usually something like 
 this (change the USERNAME to match your path):
 
 ```
 # location of Chia's configuration file. It is used to navigate the plots directories
 chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
+```
+Edit the chia_binary variable. The format is usually something like 
+this (change the USERNAME and VERSION to match your path):
+
+```
+# location of chia executable, used when importing plots to verify that they belong to this farm
+chia_binary: C:\Users\USERNAME\AppData\Local\chia-blockchain\app-VERSION\resources\app.asar.unpacked\daemon\chia.exe
 ```
 
 # 3. Usage
