@@ -754,6 +754,7 @@ def do_scan_farm():
         for record in data:
             id = record[0]
             filename= record[2] + "\\" + record[1]
+            print (id, filename)
             if not os.path.exists(filename):
                 logging.info(f"! {filename} not found! removing from plots database")
                 print(f"DELETE FROM plots WHERE name = '{record[1]}'")
