@@ -903,6 +903,8 @@ def do_show_farm_distribution():
             og = line[0]
 
     if (nft == 0) and (og == 0):
+        print("* No NFT or OG plots found!")
+        logging.info("* No NFT or OG plots found!")
         print("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots...")
     else:
         data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both","Yes"]]
