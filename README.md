@@ -104,16 +104,24 @@ You can use your favorite editor)
 Edit the chia_config_file variable. The format is usually something like 
 this (change the USERNAME to match your path):
 
-```
+```buildoutcfg
 # location of Chia's configuration file. It is used to navigate the plots directories
 chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
 ```
 Edit the chia_binary variable. The format is usually something like 
 this (change the USERNAME and VERSION to match your path):
 
-```
+```buildoutcfg
 # location of chia executable, used when importing plots to verify that they belong to this farm
 chia_binary: C:\Users\USERNAME\AppData\Local\chia-blockchain\app-VERSION\resources\app.asar.unpacked\daemon\chia.exe
+```
+
+(Optional) you can store the SQLite database at a different location than the default ".\db\" 
+
+```buildoutcfg
+# Where do you want to store the database.  If not defined, it is stored in local directory "db"
+# database_location: db
+database_location: C:\path\to\database\
 ```
 
 # 3. Usage

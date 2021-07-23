@@ -7,7 +7,10 @@ def initialize_database() :
     """ Define the Database connection """
     if not os.path.exists ( 'db' ) :
         os.makedirs ( 'db' )
-    db = sql.connect ( "db\chia-farm-stats.db" )
+
+    database = get_db_path() + "chia-farm-stats.db"
+
+    db = sql.connect ( database )
     c = db.cursor ( )
     with db :
         db.execute ( "CREATE TABLE if not exists plots (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT, path TEXT,drive TEXT,size FLOAT, type TEXT, valid TEXT, date REAL DEFAULT (datetime('now','localtime')),unique(name)); " )
@@ -52,8 +55,28 @@ def do_changes_to_database(sql_query) :
     return
 
 def db_connect() :
-    db = sql.connect ( 'db\chia-farm-stats.db' )
+    database = get_db_path() + "chia-farm-stats.db"
+    db = sql.connect ( database )
     return db
+
+
+def get_db_path() :
+    from helpers import get_config
+    import os, logging
+
+    db_path = get_config ( 'config.yaml' ).get ( 'database_location' )
+
+    if db_path:
+        path = os.path.join(db_path, '')
+        if not os.path.exists(path):
+            logging.error(f"! Directory [{db_path}] 'database_location' in config.yaml does not exist")
+            print(f"! Directory [{db_path}] 'database_location' in config.yaml does not exist")
+            exit()
+        else:
+            return path
+
+    else:
+        return os.path.join("db", '')
 
 
 
