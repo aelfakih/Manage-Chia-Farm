@@ -524,6 +524,7 @@ def do_import_plots(style):
             # exit if they to and form are the same
             if import_from == find_mount_point ( import_to ):
                 print("! TO and FROM destinations are the same! Skipping")
+                logging.info("The provided TO and FROM destinations are the same! Skipping import of plot.")
                 return
 
             if import_to == "Cancel":
