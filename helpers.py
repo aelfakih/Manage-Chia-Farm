@@ -433,15 +433,18 @@ def is_verbose() :
 def get_verbose_level() :
     import logging
     """
-    Return True or False for verbose in config.yaml
+    Return the level of logging, ERROR by default
     """
     verbose = get_config ( 'config.yaml' ).get ( 'verbose_level' )
-    if verbose in "ERROR":
-        return logging.ERROR
-    elif verbose in "INFO":
-        return logging.INFO
-    elif verbose in "DEBUG":
-        return  logging.DEBUG
+    if verbose:
+        if verbose in "ERROR":
+            return logging.ERROR
+        elif verbose in "INFO":
+            return logging.INFO
+        elif verbose in "DEBUG":
+            return  logging.DEBUG
+        else:
+            return logging.ERROR
     else:
         return logging.ERROR
 
