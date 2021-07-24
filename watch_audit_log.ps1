@@ -1,0 +1,1 @@
+Get-Content -Path "log\audit.log" -Last 10 -Wait
