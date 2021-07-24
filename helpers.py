@@ -420,13 +420,31 @@ def get_free_space_GiB (dir):
     free = free // (2 ** 30)
     return free
 
-""" Return True or False for verbose in config.yaml """
 def is_verbose() :
+    """
+    Return True or False for verbose in config.yaml
+    """
     verbose = get_config ( 'config.yaml' ).get ( 'verbose' )
     if verbose == True:
         return True
     else:
         return False
+
+def get_verbose_level() :
+    import logging
+    """
+    Return True or False for verbose in config.yaml
+    """
+    verbose = get_config ( 'config.yaml' ).get ( 'verbose_level' )
+    if verbose in "ERROR":
+        return logging.ERROR
+    elif verbose in "INFO":
+        return logging.INFO
+    elif verbose in "DEBUG":
+        return  logging.DEBUG
+    else:
+        return logging.ERROR
+
 
 def get_plot_directories():
     import yaml

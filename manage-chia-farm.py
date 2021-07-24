@@ -32,7 +32,7 @@ log_filename = 'log\\audit.log'
 logging.basicConfig(filename=log_filename,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s %(funcName)s %(lineno)d %(levelname)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=logging.INFO)
+                    level=get_verbose_level())
 
 
 """ 
