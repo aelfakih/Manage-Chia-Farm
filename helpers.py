@@ -304,7 +304,7 @@ def stacked_bar_chart(data , max_length) :
     #print Legend
     sys.stdout.write ( Fore.RESET )
     if label_total in "Yes":
-        sys.stdout.write ( f" Total: {total_segments:.0f} >"  )
+        sys.stdout.write ( f" Total: {total_segments:5.0f} >"  )
     sys.stdout.write ( Fore.RESET +  " : " )
     sys.stdout.write (  Fore.RESET + get_colorama_bgcolor ( segment_one_color )+  f"{segment_one_label}" )
     if label_style in "both" or label_style in "count":
@@ -683,18 +683,18 @@ def do_scan_farm():
             mount_total = bytes_to_gib(mount_total)
             mount_used = bytes_to_gib(mount_used)
             mount_free = bytes_to_gib(mount_free)
-            print(" Directory: Valid |",end="")
+            print(" Valid |",end="")
             do_changes_to_database( "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes",session_id))
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
                 logging.error("%s plot is offline" % (dir))
-                print (" Online: No |",end="")
+                print (" OFFLINE |",end="")
             else:
-                print (" Online: Yes |",end="")
+                print (" ONLINE |",end="")
                 arr = os.listdir ( dir )
                 plots_at_location = len(arr)
-                print ( " # plots %s | Scanning Plots..." % (plots_at_location))
-                with tqdm ( total=plots_at_location ) as pbar :
+                print ( " %s plots found | Scanning:" % (plots_at_location))
+                with tqdm ( total=plots_at_location , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}{r_bar}' ) as pbar :
                     for plot in arr :
                         pbar.update ( 1 )
                         scanned = 0
