@@ -40,7 +40,7 @@ def get_results_from_database(sql_query) :
     c.execute ( sql_query )
     data = c.fetchall ( )
     if is_verbose ( ) :
-        logging.info ( sql_query )
+        logging.info ( "get_results_from_database: " + sql_query )
     return data
 
 
@@ -50,7 +50,7 @@ def do_changes_to_database(sql_query) :
     c = db.cursor ( )
     c.execute ( sql_query )
     if is_verbose ( ) :
-        logging.info ( sql_query )
+        logging.info ( "do_changes_to_database: " + sql_query )
     db.commit()
     return
 

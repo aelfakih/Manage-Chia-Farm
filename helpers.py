@@ -4,9 +4,7 @@ import os
 import re
 import sys
 import shutil
-import yaml
 import collections
-from tqdm import tqdm, trange
 import logging
 from PyInquirer import style_from_dict, Token, prompt, Separator
 
@@ -27,12 +25,16 @@ def get_chia_farm_plots() :
                         chia_farm.append ( filename )
                         plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
         else:
-            logging.error("! %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
+            if is_verbose ( ) :
+                logging.error("get_chia_farm_plots: %s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
     # sort chia_farm
     chia_farm.sort ( )
     return chia_farm
 
 def get_non_plots_in_farm( chia_farm ) :
+    """
+    Return list of items that DO NOT end with .plot
+    """
     plot_list =[]
 
     # find files that have .plot extension
@@ -41,12 +43,21 @@ def get_non_plots_in_farm( chia_farm ) :
     # find symmetric difference.
     plot_list = list ( filter ( p.match , chia_farm ) )
 
-   # find symmetric difference.
+    # find symmetric difference.
     non_plot_list = set ( plot_list ).symmetric_difference ( chia_farm )
     return non_plot_list
 
 def get_duplicte_plotnames(plot_dirs) :
-    # Load plot_ dictionaries from farm directories
+    """
+    In the plot_dirs list, look for duplicates and return them
+    the duplicate names (no path) with a list that shows the
+    locations where they repeat
+
+    example:
+
+    plot-1234567.plot, ["c:\path1","m:\path20"]
+    """
+
     duplicate_plotnames=[]
     plotnames=[]
     plot_path={}
@@ -71,15 +82,27 @@ def get_duplicte_plotnames(plot_dirs) :
     return duplicate_plotnames, plot_path
 
 def find_non_plots() :
+    import logging
+    """
+    Method scans the chia farm for NON-PLOTS and prompts farmer to delete them.
+    NON-PLOTS are files that do not end in .plot
+    * it does not need DB to scan, the scan is made live
+    * it does save data found into database
+    """
     from database import do_changes_to_database
     from PyInquirer import prompt , Separator
     session_id = get_session_id()
 
     total_size_GiB = 0
     chia_farm = get_chia_farm_plots ( )
-    """ [1] Find and remove NON-PLOTS """
 
-    print ( "* Checking for non-plots files (without a '.plot' extension) ... " , end="" )
+    print ("* ----------------------------------------------------------------------")
+    print ("* This routine scans your Chia farm for files that DO NOT END in .plot.")
+    print ("* If detected, you will be prompted to delete them.  All deletions are FINAL.")
+    print ("* ----------------------------------------------------------------------")
+    print ("* Checking for non-plots files (without a '.plot' extension) ... " , end="" )
+    if is_verbose ( ) :
+        logging.info ( f"find_non_plots: Looking for non-plot files" )
 
     """ Get the non plots in the farm """
     non_plot_list = get_non_plots_in_farm ( chia_farm )
@@ -92,6 +115,8 @@ def find_non_plots() :
             size_GiB = bytes_to_gib(os.path.getsize ( file ))
             total_size_GiB += size_GiB
             print ( indent ( ">" , "%s (%s GiB)" % (file , size_GiB) ) )
+            if is_verbose ( ) :
+                logging.info(f"find_non_plots: NON-PLOT file detected: {file} Size: {size_GiB} GiB")
             do_changes_to_database (
                 f"REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('{os.path.basename(file)}','{os.path.dirname(file)}\','{find_mount_point ( file )}','{size_GiB}','?','No','{session_id}')")
 
@@ -100,7 +125,7 @@ def find_non_plots() :
         questions = [
             {
                 'type' : 'confirm' ,
-                'message' : "Do you want to DELETE NON-PLOT files and save %s GB of storage space?" % (total_size_GiB) ,
+                'message' : "Do you want to DELETE NON-PLOT files and save %s GiB of storage space?" % (total_size_GiB) ,
                 'name' : 'delete_non_plots' ,
                 'default' : False ,
             }
@@ -112,13 +137,15 @@ def find_non_plots() :
                     os.remove ( file )
                     print ( indent ( "*" , "Deleting:  %s" % file ) )
                     if is_verbose ( ) :
-                        logging.info ( "Deleting:  %s" % file )
+                        logging.info ( "find_non_plots: Deleting:  %s" % file )
         else :
             print ( indent ( "*" , "Skipping. No files deleted!" ) )
+            if is_verbose ( ) :
+                logging.info("find_non_plots: No Files Were Deleted")
     else :
         print ( "[OK] None found!" )
         if is_verbose ( ) :
-            logging.info ( "No non-plots files found!" )
+            logging.info ( "find_non_plots: No non-plots files found!" )
 
 """ 
 Find plots with the same name in the farm, 
@@ -130,6 +157,8 @@ def find_duplicate_plots() :
     largest_capacity = 0
 
     print ( "* Checking for duplicate plot filenames ... " , end="" )
+    if is_verbose ( ) :
+        logging.info("find_duplicate_plots: Looking for duplicate plots")
 
     """ Get the duplicate plotnames """
     duplicate_plotnames , plot_path = get_duplicte_plotnames ( get_plot_directories ( ) )
@@ -139,7 +168,9 @@ def find_duplicate_plots() :
         print ( "[NOK]" )
         print ( indent ( "*" , "WARNING! Found %s plots with multiple copies" % (number_of_files) ) )
         for file in duplicate_plotnames :
-            print ( indent ( ">" , "%s  (%s)" % (file , plot_path[file]) ) )
+            print ( indent ( ">" , "%s  found in (%s)" % (file , plot_path[file]) ) )
+            if is_verbose ( ) :
+                logging.info ( f"find_duplicate_plots: {file} found in {plot_path[file]}" )
 
         """ Get feedback from farmer (default is do not delete) """
         questions = [
@@ -164,15 +195,19 @@ def find_duplicate_plots() :
 
                 file_to_delete = remove_from_drive.strip ( ) + '\\' + file
                 print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
+                if is_verbose ( ) :
+                    logging.info ( "find_duplicate_plots: Deleting [%s]" % (file_to_delete) )
                 os.remove ( file_to_delete )
                 if is_verbose ( ) :
-                    logging.info ( "Deleting [%s]" % (file_to_delete) )
+                    logging.info ( "find_duplicate_plots: Deleting [%s]" % (file_to_delete) )
         else :
             print ( indent ( "*" , "Skipping. No files deleted!" ) )
+            if is_verbose ( ) :
+                logging.info ( "find_duplicate_plots: Skipping. No files deleted!" )
     else :
         print ( "[OK] None found!" )
         if is_verbose ( ) :
-            logging.info ( "No duplicate names files found!" )
+            logging.info ( "find_duplicate_plots: No duplicate names files found!" )
 
 def get_smallest_plot ( ):
     plot_dirs = get_plot_directories ( )
@@ -190,14 +225,14 @@ def get_smallest_plot ( ):
             counter += 1
             mod = round(free/average_size)
             if is_verbose():
-                logging.info("%s has %s GiB free, good enough for %s plot(s)" % (dir, free, mod))
+                logging.info("get_smallest_plot: %s has %s GiB free, good enough for %s plot(s)" % (dir, free, mod))
             # find the smallest plot available
             if free < min_storage_available:
                 min_storage_available = free
                 min_storage_drive = dir
                 max_plots_to_fit = mod
     if is_verbose():
-        logging.info("Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
+        logging.info("get_smallest_plot: Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
     return min_storage_drive, max_plots_to_fit
 
 def get_destination_capacity ( dir ):
@@ -218,7 +253,7 @@ def get_destination_capacity ( dir ):
         counter += 1
         mod = round ( free / average_size )
         if is_verbose ( ) :
-            logging.info ( "%s has %s GiB free, good enough for %s plot(s)" % (dir , free , mod) )
+            logging.info ( "get_destination_capacity: %s has %s GiB free, good enough for %s plot(s)" % (dir , free , mod) )
         # find the smallest plot available
         if free < min_storage_available :
             min_storage_available = free
@@ -226,7 +261,7 @@ def get_destination_capacity ( dir ):
             max_plots_to_fit = mod
 
     if is_verbose():
-        logging.info("Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
+        logging.info("get_destination_capacity: Choosing %s to store a max of %s plots" % (min_storage_drive, max_plots_to_fit))
     return min_storage_drive, max_plots_to_fit
 
 #################### Helpers ####################
@@ -339,13 +374,13 @@ def initialize_me() :
     """ Get the plots that the Chia farm is farming """
     plot_dirs = get_plot_directories ( )
     if is_verbose ( ) :
-        logging.info ( "Scanning the following plot directories: %s" % (plot_dirs) )
+        logging.info ( "initialize_me: Scanning the following plot directories: %s" % (plot_dirs) )
     """ Get the plots available in the farm """
     chia_farm = get_chia_farm_plots ( )
     number_of_plots = len ( chia_farm )
     print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted to this machine!" )
     if is_verbose ( ) :
-        logging.info ( "Found %s files in farm" % (number_of_plots) )
+        logging.info ( "initialize_me: Found %s files in farm" % (number_of_plots) )
 
 """ For a given path/file find the mount point"""
 def find_mount_point(path):
@@ -437,6 +472,9 @@ def do_import_plots(style):
     action_rename ="Keep and RENAME extension to 'IMPORTED'"
     action_delete ="Delete it"
 
+    if is_verbose ( ) :
+        logging.info("do_import_plots: Getting list of potential source and destination locations")
+
     results = get_results_from_database ("""
     SELECT pd.drive as MOUNT, 
     (select count(*) from plots where drive = pd.drive and type = 'NFT') as NFT, 
@@ -456,6 +494,9 @@ def do_import_plots(style):
         free = bytes_to_gib ( free )
         total = bytes_to_gib ( total )
         from_drives.append(f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ')
+        if is_verbose ( ) :
+            logging.info ( f'do_import_plots: [{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ' )
+
         if line[3] > 101.5 :
             to_drives.append(f"[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | Can accommodate {accomodates} k32 plots")
 
@@ -493,9 +534,13 @@ def do_import_plots(style):
         import_from = answers['from']
 
     if import_from == "Cancel":
+        if is_verbose ( ) :
+            logging.info ( f'do_import_plots: Cancelled  ' )
         return
     else:
         print("* Searching for .plot files in [%s] ..." % (import_from))
+        if is_verbose ( ) :
+            logging.info ( f"do_import_plots: Searching for .plot files in [%s] ..." % (import_from) )
 
         """ Walk the drive looking for .plot files """
         for root , dirs , files in os.walk ( import_from ) :
@@ -511,6 +556,8 @@ def do_import_plots(style):
                     size_GiB = bytes_to_gib ( os.path.getsize ( filename ))
                     total_size_GiB += size_GiB
                     print (f"> {filename} ({size_GiB} GiB)  (Format: {type})")
+                    if is_verbose ( ) :
+                        logging.info ( f"do_import_plots: {filename} ({size_GiB} GiB)  (Format: {type})")
 
         questions = [
             {
@@ -540,7 +587,8 @@ def do_import_plots(style):
             # exit if they to and form are the same
             if import_from == find_mount_point ( import_to ):
                 print("! TO and FROM destinations are the same! Skipping")
-                logging.info("The provided TO and FROM destinations are the same! Skipping import of plot.")
+                if is_verbose ( ) :
+                    logging.info("do_import_plots: The provided TO and FROM destinations are the same! Skipping import of plot.")
                 return
 
             if import_to == "Cancel":
@@ -615,15 +663,16 @@ def do_import_file_into_farm(src, destination_folder, action):
     dest_total , dest_used , dest_free = shutil.disk_usage ( disk_label )
 
     if dest_free < f_size:
-        logging.info (f"* Copying was skipped for lack of available space at {disk_label} ")
+        if is_verbose ( ) :
+            logging.info (f"do_import_file_into_farm: Copying was skipped for lack of available space at {disk_label} ")
         print(f"! Copying was skipped for lack of available space at {disk_label}")
     else:
         num_chunks = f_size // buff + 1
         if is_verbose ( ) :
-            logging.info ( "Copying %s as %s" % (src , dest) )
+            logging.info ( "do_import_file_into_farm: Copying %s as %s" % (src , dest) )
         with open ( src , 'rb' ) as src_f , open ( dest , 'wb' ) as dest_f :
             try :
-                for i in tqdm ( range ( num_chunks ) ) :
+                for i in tqdm ( range ( num_chunks ) , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}{r_bar}' ) :
                     chunk = src_f.read ( buff )
                     dest_f.write ( chunk )
             except IOError as e :
@@ -636,16 +685,16 @@ def do_import_file_into_farm(src, destination_folder, action):
                 done = src + '.imported'
                 os.rename ( dest , live )  # make the plot live
                 if is_verbose ( ) :
-                    logging.info ( "[DESTINATION] Renaming %s to %s" % (dest , live) )
+                    logging.info ( "do_import_file_into_farm: [DESTINATION] Renaming %s to %s" % (dest , live) )
 
                 if action == "rename":
                     os.rename ( src , done )  # stop source from being reimported
                     if is_verbose ( ) :
-                        logging.info ( "[SOURCE] Renamed %s to %s" % (src , done) )
+                        logging.info ( "do_import_file_into_farm: [SOURCE] Renamed %s to %s" % (src , done) )
                 elif action =="delete":
                     os.remove(src)
                     if is_verbose ( ) :
-                        logging.info ( "[SOURCE] Deleted %s" % (src) )
+                        logging.info ( "do_import_file_into_farm: [SOURCE] Deleted %s" % (src) )
 
 
                 print ( f'Done! Copied {bytes_to_gib(f_size)} GiB' )
@@ -672,10 +721,10 @@ def do_scan_farm():
     plot_dirs = get_plot_directories ( )
 
     if is_verbose() :
-        logging.info ( "Scanning Chia farm..." )
+        logging.info ( "do_scan_farm: Scanning Chia farm..." )
 
     for dir in plot_dirs :
-        print ( "* Checking plot directory %s: " % (dir), end="" )
+        print ( "* PLOT Directory %s: " % (dir), end="" )
 
         if os.path.isdir(dir):
             mount_point = find_mount_point(dir)
@@ -693,60 +742,71 @@ def do_scan_farm():
                 print (" ONLINE |",end="")
                 arr = os.listdir ( dir )
                 plots_at_location = len(arr)
-                print ( " %s plots found | Scanning:" % (plots_at_location))
-                with tqdm ( total=plots_at_location , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}{r_bar}' ) as pbar :
-                    for plot in arr :
-                        pbar.update ( 1 )
-                        scanned = 0
-                        indirectory=0
-                        if (plot not in ignore_these) :
-                            data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}'")
-                            for line in data:
-                                scanned = line[0]
-                                indirectory = line[1]
+                """ If there are files to scan, start loop """
+                if plots_at_location > 0:
+                    print ( " %s plots found | Scanning:" % (plots_at_location) )
+                    with tqdm ( total=plots_at_location , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}{r_bar}' ) as pbar :
+                        for plot in arr :
+                            pbar.update ( 1 )
+                            scanned = 0
+                            indirectory=0
+                            if (plot not in ignore_these) :
+                                data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}'")
+                                for line in data:
+                                    scanned = line[0]
+                                    indirectory = line[1]
 
-                            if not scanned and not indirectory :
-                                filename = dir + '\\' + plot
-                                plot_size = bytes_to_gib( os.path.getsize ( filename ))
-                                logging.info ( "Checking %s:" % (plot) )
-                                logging.info ( " Size: %s |" % (plot_size) )
+                                if not scanned and not indirectory :
+                                    filename = dir + '\\' + plot
+                                    plot_size = bytes_to_gib( os.path.getsize ( filename ))
+                                    if is_verbose ( ) :
+                                        logging.info ( "do_scan_farm: Checking %s:" % (plot) )
+                                        logging.info ( "do_scan_farm: Size: %s |" % (plot_size) )
 
-                                found = "Found 1 valid plots"
-                                is_nft = "Pool public key: None"
-                                output = []
-                                chia_binary = get_chia_binary ( )
-                                if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) :
-                                    output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
-                                    # if it is a valid plot, find out if it is NFT or OG
-                                    if found in output :
-                                        logging.info ( f"{plot} Plot Valid: Yes" )
-                                        valid = "Yes"
+                                    found = "Found 1 valid plots"
+                                    is_nft = "Pool public key: None"
+                                    output = []
+                                    chia_binary = get_chia_binary ( )
+                                    if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) :
+                                        output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
+                                        # if it is a valid plot, find out if it is NFT or OG
+                                        if found in output :
+                                            if is_verbose ( ) :
+                                                logging.info ( f"do_scan_farm: {plot} Plot Valid: Yes" )
+                                            valid = "Yes"
 
-                                        if is_nft in output :
-                                            logging.info ( f"{plot} Plot Type: NFT" )
-                                            type = "NFT"
+                                            if is_nft in output :
+                                                if is_verbose ( ) :
+                                                    logging.info ( f"do_scan_farm: {plot} Plot Type: NFT" )
+                                                type = "NFT"
+                                            else :
+                                                if is_verbose ( ) :
+                                                    logging.info ( f"do_scan_farm: {plot} Plot Type: OG" )
+                                                type = "OG"
+
                                         else :
-                                            logging.info ( f"{plot} Plot Type: OG" )
-                                            type = "OG"
+                                            if is_verbose ( ) :
+                                                logging.info ( f"do_scan_farm: {plot} Plot Valid: No" )
+                                                logging.info ( f"do_scan_farm: {plot} Plot Type: Not Applicable" )
+                                            valid = "No"
+                                            type = "NA"
+
+
+                                        do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (
+                                            plot , dir , mount_point , plot_size , type , valid,session_id))
 
                                     else :
-                                        logging.info ( f"{plot} Plot Valid: No" )
-                                        logging.info ( f"{plot} Plot Type: Not Applicable" )
-                                        valid = "No"
-                                        type = "NA"
-
-
-                                    do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (
-                                        plot , dir , mount_point , plot_size , type , valid,session_id))
+                                        logging.error ( "Chia binary was not found, please check config.yaml setting **" )
 
                                 else :
-                                    logging.error ( "Chia binary was not found, please check config.yaml setting **" )
-
-                            else :
-                                logging.info ( "Plot %s has been previously scanned!" % (plot) )
-                                if not indirectory:
-                                    do_changes_to_database (f"UPDATE plots SET path='{dir}', drive='{mount_point}', scan_ukey='{session_id}' WHERE name='{plot}'")
-                                    logging.info(f"Updated {plot} locaiton to {dir} in DB")
+                                    if is_verbose ( ) :
+                                        logging.info ( "do_scan_farm: Plot %s has been previously scanned!" % (plot) )
+                                    if not indirectory:
+                                        do_changes_to_database (f"UPDATE plots SET path='{dir}', drive='{mount_point}', scan_ukey='{session_id}' WHERE name='{plot}'")
+                                        if is_verbose ( ) :
+                                            logging.info(f"do_scan_farm: Updated {plot} locaiton to {dir} in DB")
+                else:
+                    print ( " %s plots found | Skipping!" % (plots_at_location) )
 
 
         else:
@@ -764,7 +824,8 @@ def do_scan_farm():
         print("* Cleaning up the plot directories and associated plot names from database")
         for record in data:
             path = record[0]
-            logging.info(f"DELETE FROM plot_directory WHERE path = '{path}'")
+            if is_verbose ( ) :
+                logging.info(f"do_scan_farm: DELETE FROM plot_directory WHERE path = '{path}'")
             do_changes_to_database(f"DELETE FROM plot_directory WHERE path = '{path}'")
 
     """
@@ -778,8 +839,9 @@ def do_scan_farm():
             id = record[0]
             filename= record[2] + "\\" + record[1]
             if not os.path.exists(filename):
-                logging.info(f"! {filename} not found! removing from plots database")
-                logging.info(f"DELETE FROM plots WHERE name = '{record[1]}'")
+                if is_verbose ( ) :
+                    logging.info(f"do_scan_farm: {filename} not found! removing from plots database")
+                    logging.info(f"do_scan_farm: DELETE FROM plots WHERE name = '{record[1]}'")
                 do_changes_to_database ( f"DELETE FROM plots WHERE name = '{record[1]}'" )
             else:
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
@@ -791,8 +853,9 @@ def do_scan_farm():
             id = record[0]
             filename= record[2] + "\\" + record[1]
             if not os.path.exists(filename):
-                logging.info(f"! {filename} not found! removing from plots database")
-                logging.info(f"DELETE FROM plots WHERE name = '{record[1]}'")
+                if is_verbose ( ) :
+                    logging.info(f"do_scan_farm: {filename} not found! removing from plots database")
+                    logging.info(f"do_scan_farm: DELETE FROM plots WHERE name = '{record[1]}'")
                 do_changes_to_database ( f"DELETE FROM plots WHERE name = '{record[1]}'" )
             else:
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
@@ -825,9 +888,11 @@ def do_check_for_issues():
             if os.path.isfile(filename):
                 invalid_plots += 1
             else:
-                logging.info(f"! File:{filename} is not a valid entry in Database! Deleteing it form id # {line[0]}")
+                if is_verbose ( ) :
+                    logging.info(f"do_check_for_issues: File:{filename} is not a valid entry in Database! Deleteing it form id # {line[0]}")
                 do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
-        logging.error ("Found %s invalid plots in farm" % (issues))
+        if is_verbose():
+            logging.info ("do_check_for_issues: No invalid plots found in farm")
     issues += invalid_plots
     return issues
 
@@ -920,7 +985,8 @@ def do_show_farm_distribution():
 
     if (nft == 0) and (og == 0):
         print("* No NFT or OG plots found!")
-        logging.info("* No NFT or OG plots found!")
+        if is_verbose ( ) :
+            logging.info("do_show_farm_distribution: No NFT or OG plots found!")
         print("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots...")
     else:
         data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both","Yes"]]
