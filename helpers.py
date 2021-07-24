@@ -180,7 +180,7 @@ def get_smallest_plot ( ):
     average_size = 106300000
     counter = 0
     for dir in plot_dirs:
-        drive = get_letter_drive ( dir )
+        drive = find_mount_point ( dir )
         total, used, free = shutil.disk_usage(drive)
         # convert to GiB
         free = free // (2**30)
@@ -410,6 +410,16 @@ def get_pyinquirer_style() :
     } )
     return style
 
+def print_spaces(input,length):
+    x = ' '
+    word =""
+    i = 0
+    count=length-len(input)
+    while i <= count :
+        word = word + x
+        i += 1
+    return word
+
 def do_import_plots(style):
     import os , string
     from database import get_results_from_database
@@ -439,17 +449,23 @@ def do_import_plots(style):
         drive = line[0]
         nft = line[1]
         og = line[2]
-        free = round(line[3]/101.5)
+        accomodates = round(line[3]/101.5)
         path = line[4]
-        from_drives.append("[%s]  Contains %s NFTs, %s OGs" %  (drive,nft,og))
+        total , used , free = shutil.disk_usage ( drive )
+        # convert to GiB
+        free = bytes_to_gib ( free )
+        total = bytes_to_gib ( total )
+        from_drives.append(f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ')
         if line[3] > 101.5 :
-            to_drives.append("[%s]  Contains %s NFTs, %s OGs, and can accommodate %s k32 plots" %  (path,nft,og,free))
+            to_drives.append(f"[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | Can accommodate {accomodates} k32 plots")
 
+    from_drives.sort()
+    to_drives.sort()
     # added an option for manual input
-    from_drives.append ( ">> [Other] Location not listed in chia's plots directory" )
-    from_drives.append ( ">> [Cancel]" )
+    from_drives.append ( f"[Other]{print_spaces('other',25)}| Location NOT listed in chia's plots directory" )
+    from_drives.append ( "[Cancel]" )
 
-    to_drives.append ( ">> [Cancel]" )
+    to_drives.append ( "[Cancel]" )
 
 
     questions = [
