@@ -24,22 +24,17 @@ except ImportError:
         """A dummy exception to take the place of Python 3's
         ``io.UnsupportedOperation`` in Python 2"""
 
-import pathlib
-import os
-import re
-import sys
-import shutil
-import yaml
-from database import *
 from helpers import *
-import collections
 from PyInquirer import style_from_dict, Token, prompt, Separator
 import logging
 
+log_filename = 'log\\audit.log'
+logging.basicConfig(filename=log_filename,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s %(funcName)s %(lineno)d %(levelname)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    level=logging.INFO)
 
 
-logging.basicConfig(filename='log\\audit.log', encoding='utf-8',
-                    format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 """ 
 initialize some of the variables needed in the program. Please do not change 
 """
