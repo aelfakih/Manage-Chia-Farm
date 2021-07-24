@@ -776,7 +776,7 @@ def do_scan_farm():
             filename= record[2] + "\\" + record[1]
             if not os.path.exists(filename):
                 logging.info(f"! {filename} not found! removing from plots database")
-                print(f"DELETE FROM plots WHERE name = '{record[1]}'")
+                logging.info(f"DELETE FROM plots WHERE name = '{record[1]}'")
                 do_changes_to_database ( f"DELETE FROM plots WHERE name = '{record[1]}'" )
             else:
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
