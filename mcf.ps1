@@ -1,1 +1,1 @@
-python manage-chia-farm.py
+python .\manage-chia-farm.py
