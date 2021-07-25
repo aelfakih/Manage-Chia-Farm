@@ -462,7 +462,12 @@ def check_for_updates():
             output = subprocess.getoutput ( f"git pull origin master --dry-run" )
             logging.info(output)
 
-            if output in "origin/master":
+            found_update = False
+            for line in output:
+                if line in "origin/master":
+                    found_update = True
+
+            if found_update:
                 logging.info("Found new version of Manage-Chia-Farm on git")
                 print("* Manage-Chia-Farm Update Found!")
                 questions = [
