@@ -50,8 +50,6 @@ dynamic_menu_resolve_issues = ""
 if __name__ == '__main__':
     style = get_pyinquirer_style ( )
 
-    check_for_updates ( )
-
     """ Check if the config.yaml exists, otherwise exit"""
     if not os.path.exists ( "config.yaml" ) :
         print("Error: config.yaml file not found. Please copy config.yaml.default and customize to your installation")

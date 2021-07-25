@@ -448,52 +448,6 @@ def get_verbose_level() :
     else:
         return logging.ERROR
 
-def check_for_updates():
-    import git
-    from PyInquirer import prompt
-    import logging
-
-    verbose = get_config ( 'config.yaml' ).get ( 'check_for_update' )
-    if verbose:
-        if verbose == True:
-            style = get_pyinquirer_style()
-
-            logging.info("Checking for GIT updates")
-            repo = git.Repo ( "." )
-            current = repo.head.commit
-
-            repo.remotes.origin.pull ("--dry-run" )
-
-            if current == repo.head.commit :
-                logging.info ( "Repo not changed. Sleep mode activated." )
-                found_update = False
-            else :
-                logging.info ( "Repo changed! Activated." )
-                found_update = True
-
-            if found_update:
-                logging.info("Found new version of Manage-Chia-Farm on git")
-                print("* Manage-Chia-Farm Update Found!")
-                questions = [
-                    {
-                        'type' : 'confirm' ,
-                        'name' : 'update' ,
-                        'message' : 'Do you want to update Manage-Chia-Farm to latest version?'
-
-                    }
-                ]
-                answers = prompt ( questions , style=style )
-                if answers['update'] == "Yes":
-                    output = repo.remotes.upstream.pull('master')
-                    logging.info ( f"* Updating branch {output}" )
-                    print("* Exiting! Please restart mcf.ps1")
-                else:
-                    logging.info ( f"* Skipping git update" )
-
-
-
-
-
 def get_plot_directories():
     import yaml
     config = get_config(get_config('config.yaml').get('chia_config_file'))
