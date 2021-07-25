@@ -1,4 +1,14 @@
 ﻿# Manage-Chia-Farm
+
+## Demo
+Easily manage your Chia farm like a pro! 
+
+
+![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/mcf-demo.gif?raw=true)
+
+
+
+
 ## Features
 
 This program helps chia farmers manage the thousands of plots within their farm, and supports the following
