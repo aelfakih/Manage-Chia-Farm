@@ -462,7 +462,7 @@ def check_for_updates():
             repo = git.Repo ( "." )
             current = repo.head.commit
 
-            repo.remotes.origin.pull ( )
+            repo.remotes.origin.pull ("--dry-run" )
 
             if current == repo.head.commit :
                 logging.info ( "Repo not changed. Sleep mode activated." )
@@ -470,7 +470,7 @@ def check_for_updates():
             else :
                 logging.info ( "Repo changed! Activated." )
                 found_update = True
-                
+
             if found_update:
                 logging.info("Found new version of Manage-Chia-Farm on git")
                 print("* Manage-Chia-Farm Update Found!")
