@@ -1,4 +1,5 @@
 PyYaml==5.4.1
 TQDM
-PyInquirer
-termgraph
+PyInquirer==1.0.3
+colorama==0.4.4
+gitpython

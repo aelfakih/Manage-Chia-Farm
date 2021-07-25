@@ -449,7 +449,7 @@ def get_verbose_level() :
         return logging.ERROR
 
 def check_for_updates():
-    import subprocess
+    import git
     from PyInquirer import prompt
     import logging
 
@@ -459,13 +459,18 @@ def check_for_updates():
             style = get_pyinquirer_style()
 
             logging.info("Checking for GIT updates")
-            output = subprocess.getoutput ( f"git pull origin master --dry-run" )
-            logging.info(output)
+            repo = git.Repo ( "." )
+            current = repo.head.commit
 
-            found_update = False
-            for line in output:
-                if line in "origin/master":
-                    found_update = True
+            repo.remotes.origin.pull ( )
+
+            if current == repo.head.commit :
+                print ( "Repo not changed. Sleep mode activated." )
+                found_update = False
+            else :
+                print ( "Repo changed! Activated." )
+                found_update = True
+                return True
 
             if found_update:
                 logging.info("Found new version of Manage-Chia-Farm on git")
@@ -480,7 +485,7 @@ def check_for_updates():
                 ]
                 answers = prompt ( questions , style=style )
                 if answers['update'] == "Yes":
-                    output = subprocess.getoutput ( f"git pull origin master" )
+                    output = repo.remotes.upstream.pull('master')
                     logging.info ( f"* Updating branch {output}" )
                     print("* Exiting! Please restart mcf.ps1")
                 else:
