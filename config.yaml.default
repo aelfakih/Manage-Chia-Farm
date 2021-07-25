@@ -9,3 +9,5 @@ verbose: false
 verbose_level: ERROR
 # Where do you want to store the database.  If not defined, it is stored in local directory "db"
 # database_location: db
+# check for updates on startup
+check_for_update: true

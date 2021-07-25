@@ -448,6 +448,41 @@ def get_verbose_level() :
     else:
         return logging.ERROR
 
+def check_for_updates():
+    import subprocess
+    from PyInquirer import prompt
+    import logging
+
+    verbose = get_config ( 'config.yaml' ).get ( 'check_for_update' )
+    if verbose:
+        if verbose == True:
+            style = get_pyinquirer_style()
+
+            logging.info("Checking for GIT updates")
+            output = subprocess.getoutput ( f"git pull origin master --dry-run" )
+
+            if output in "origin/master":
+                logging.info("Found new version of Manage-Chia-Farm on git")
+                print("* Manage-Chia-Farm Update Found!")
+                questions = [
+                    {
+                        'type' : 'confirm' ,
+                        'name' : 'update' ,
+                        'message' : 'Do you want to update Manage-Chia-Farm to latest version?'
+
+                    }
+                ]
+                answers = prompt ( questions , style=style )
+                if answers['update'] == "Yes":
+                    output = subprocess.getoutput ( f"git pull origin master" )
+                    logging.info ( f"* Updating branch {output}" )
+                    print("* Exiting! Please restart mcf.ps1")
+                else:
+                    logging.info ( f"* Skipping git update" )
+
+
+
+
 
 def get_plot_directories():
     import yaml
