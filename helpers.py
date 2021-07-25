@@ -460,6 +460,7 @@ def check_for_updates():
 
             logging.info("Checking for GIT updates")
             output = subprocess.getoutput ( f"git pull origin master --dry-run" )
+            logging.info(output)
 
             if output in "origin/master":
                 logging.info("Found new version of Manage-Chia-Farm on git")
@@ -919,6 +920,9 @@ def do_scan_farm():
 
 def get_chia_binary() :
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
+    if not chia_binary:
+        logging.error("chia_binary variable was not founf in config.yaml, please cnfigure and restart application")
+        exit()
     return chia_binary
 
 def do_check_for_issues():
