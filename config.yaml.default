@@ -11,3 +11,7 @@ verbose_level: ERROR
 # database_location: db
 # check for git updates on startup
 check_for_update: true
+# Ignore the following file extensions when looking for non-plots for deletion
+# NOTE! all extensions MUST start with a (.) dot. for example .txt , .plot.tmp
+ignore_extensions:
+ - .plot.tmp

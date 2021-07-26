@@ -156,6 +156,19 @@ check_for_update: true
 database_location: C:\path\to\database\
 ```
 
+(Optional) you can ignore specific file extensions when executing the **Find non-plots**, so that
+you can keep files that you want to keep in farm.  Good examples are *.plot.tmp* files if running
+MCF on a plotter machine and you do not want to accidentaly delete the .tmp files
+
+```buildoutcfg
+# Ignore the following file extensions when looking for non-plots for deletion
+# NOTE! all extensions MUST start with a (.) dot. for example .txt , .plot.tmp
+ignore_extensions:
+ - .plot.tmp
+```
+
+
+
 # 3. Usage
 To run this program, execute the following command
 

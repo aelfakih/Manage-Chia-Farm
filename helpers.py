@@ -11,9 +11,9 @@ from PyInquirer import style_from_dict, Token, prompt
 #####  Needs cleanup #####
 def get_chia_farm_plots() :
     chia_farm = []
-    plot_sizes =[]
     plot_dirs = get_plot_directories()
     ignore_these = ["$RECYCLE.BIN","System Volume Information"]
+
     """ Scan through the farm to build chia_farm (database) """
     for directory in plot_dirs :
         if os.path.isdir (directory):
@@ -23,25 +23,37 @@ def get_chia_farm_plots() :
                     filename = directory + '\\' + plot
                     if os.path.isfile(filename):
                         chia_farm.append ( filename )
-                        plot_sizes.append ( round ( os.path.getsize ( filename ) / (2 ** 30) , 2 ) )
         else:
             if is_verbose ( ) :
                 logging.error("%s, which is listed in chia's config.yaml file is not a valid directory" % (directory))
     # sort chia_farm
-    chia_farm.sort ( )
     return chia_farm
 
 def get_non_plots_in_farm( chia_farm ) :
     """
     Return list of items that DO NOT end with .plot
     """
+    import logging
     plot_list =[]
 
     # find files that have .plot extension
-    p = re.compile ( ".*\.plot$" )
+    pattern =".*\.plot$"
+
+    ignore_extensions = get_extenstions_to_ignore ( )
+    if ignore_extensions:
+        print ("* Ignoring files ending with ", end="")
+        for extension in ignore_extensions :
+            print (f" [{extension}] ", end="")
+            pattern = f"{pattern}|.*\{extension}$"
+
+    print (" as defined in config.yaml")
+    logging.debug(f"Returning list of plots that DO NO match this regex pattern {pattern}")
+    p = re.compile ( pattern )
 
     # find symmetric difference.
     plot_list = list ( filter ( p.match , chia_farm ) )
+
+
 
     # find symmetric difference.
     non_plot_list = set ( plot_list ).symmetric_difference ( chia_farm )
@@ -100,7 +112,7 @@ def find_non_plots() :
     print ("* This routine scans your Chia farm for files that DO NOT END in .plot.")
     print ("* If detected, you will be prompted to delete them.  All deletions are FINAL.")
     print ("* ----------------------------------------------------------------------")
-    print ("* Checking for non-plots files (without a '.plot' extension) ... " , end="" )
+    print ("* Checking for non-plots files... ")
     if is_verbose ( ) :
         logging.info ( f"Looking for non-plot files" )
 
@@ -109,7 +121,6 @@ def find_non_plots() :
 
     if non_plot_list :
         number_of_files = len ( non_plot_list )
-        print ( "[NOK]" )
         print ( indent ( "*" , "WARNING! Found %s non-plot files in farm." % (number_of_files) ) )
         for file in non_plot_list :
             size_GiB = bytes_to_gib(os.path.getsize ( file ))
@@ -888,9 +899,19 @@ def do_scan_farm():
 def get_chia_binary() :
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
     if not chia_binary:
-        logging.error("chia_binary variable was not founf in config.yaml, please cnfigure and restart application")
+        logging.error("chia_binary variable was not found in config.yaml, please cnfigure and restart application")
         exit()
     return chia_binary
+
+def get_extenstions_to_ignore() :
+    ignore_extensions = get_config ( 'config.yaml' ).get ( 'ignore_extensions' )
+    if not ignore_extensions:
+        logging.info("ignore_extensions variable was not found in config.yaml")
+        return False
+    return ignore_extensions
+
+
+
 
 def do_check_for_issues():
     from database import get_results_from_database
@@ -1084,6 +1105,7 @@ def do_watch_and_replace():
     print ("* Search and watch a location for NFTs.")
     print ("* When found, replace an OG with NFT plot")
     print ("*---------------------------------------------------" )
+    print(get_extenstions_to_ignore())
 
 
 #################### NOT ready to be used  ###################
