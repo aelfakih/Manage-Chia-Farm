@@ -111,6 +111,7 @@ You can use your favorite editor)
 
 `PS C:\Users\USERNAME\Manage-Chia-Farm> notepad.exe config.yaml`
 
+###chia_config_file
 Edit the chia_config_file variable. The format is usually something like 
 this (change the USERNAME to match your path):
 
@@ -118,6 +119,7 @@ this (change the USERNAME to match your path):
 # location of Chia's configuration file. It is used to navigate the plots directories
 chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
 ```
+###chia_binary
 Edit the chia_binary variable. The format is usually something like 
 this (change the USERNAME and VERSION to match your path):
 
@@ -125,7 +127,7 @@ this (change the USERNAME and VERSION to match your path):
 # location of chia executable, used when importing plots to verify that they belong to this farm
 chia_binary: C:\Users\USERNAME\AppData\Local\chia-blockchain\app-VERSION\resources\app.asar.unpacked\daemon\chia.exe
 ```
-
+###verbose
 You can control the amount of logging needed for your setup. To turn logging on, set *verbose* to True
 to control the amount of reporting collected you can set *verbose_level* to ERROR, INFO or DEBUG, where 
 ERROR shows the least amount of messages (ctitical to funcionality) and DEBUG shows the most, so you
@@ -134,21 +136,19 @@ can see what the application is doing and verify expected behaviour.
 ```buildoutcfg
 # when verbose is true, the program ouputs extra information into log\audit.log
 verbose: false
+```
+
+###verbose_level
+
+```
 # what level of logging do you want to show, by default it is ERROR
 # Available options are ERROR, INFO, DEBUG
 verbose_level: ERROR
 ```
 
-If you want to check for updates every time you start the program, set ethe *check_for_update* flag to True.  
-This application will use git to check for new code and prompt to update (application needs to be restarted
-afterwards to use teh newly downloaded code)
+###database_location  (Optional)
 
-```buildoutcfg
-# check for git updates on startup
-check_for_update: true
-```
-
-(Optional) you can store the SQLite database at a different location than the default ".\db\" 
+Store the SQLite database at a different location than the default ".\db\" 
 
 ```buildoutcfg
 # Where do you want to store the database.  If not defined, it is stored in local directory "db"
@@ -156,7 +156,9 @@ check_for_update: true
 database_location: C:\path\to\database\
 ```
 
-(Optional) you can ignore specific file extensions when executing the **Find non-plots**, so that
+###ignore_extensions  (Optional)
+
+Ignore specific file extensions when executing the **Find non-plots**, so that
 you can keep files that you want to keep in farm.  Good examples are *.plot.tmp* files if running
 MCF on a plotter machine and you do not want to accidentaly delete the .tmp files
 
