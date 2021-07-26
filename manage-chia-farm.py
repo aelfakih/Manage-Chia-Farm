@@ -38,13 +38,15 @@ logging.basicConfig(filename=log_filename,
 """ 
 initialize some of the variables needed in the program. Please do not change 
 """
-menu_find_non_plots = "Find non-Plots (Scan)"
-menu_find_duplicates = "Find Duplicate Plots (Scan)"
-menu_import_plots = "Move Plots (Scan)"
+menu_find_non_plots = "Find non-Plots"
+menu_find_duplicates = "Find Duplicate Plots"
+menu_import_plots = "Move Plots"
 menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available Plot Storage Space"
-menu_show_farm_usage = "Show Used Space (Bar Graph)"
+menu_show_farm_usage = "Show Farm Bar Graph Usage "
 menu_resolve_issues = "Resolve Issues Found"
+menu_watch_and_replace = "Watch For NFTs and Replace existing OGs"
+
 dynamic_menu_resolve_issues = ""
 
 if __name__ == '__main__':
@@ -81,39 +83,43 @@ if __name__ == '__main__':
         issues_found = do_check_for_issues ( )
         if issues_found > 0 :
             dynamic_menu_resolve_issues = "%s (%s)" % (menu_resolve_issues,issues_found)
-            menu_options = [Separator ( ) ,
+            menu_options = [
+                            Separator ("___________________ Issues _____________________\n") ,
                             dynamic_menu_resolve_issues ,
-                            Separator ( ) ,
+                            Separator ("__________ Farm Management (Live Scan) __________\n" ) ,
+                            menu_verify_plots_and_directories ,
+                            menu_watch_and_replace,
+                            menu_import_plots ,
+                            Separator ( "______________ Search (Live Scan) _____________\n"  ) ,
+                            menu_find_non_plots ,
+                            menu_find_duplicates ,
+                            Separator ( "____________ Reporting (Database)_____________\n"  ) ,
                             menu_show_farm_capacity,
                             menu_show_farm_usage,
-                            Separator ( ) ,
+                            Separator ("________________________________________________\n" ) ,
+                            "Done"
+                            ]
+        else :
+            menu_options = [
+                            Separator ("__________ Farm Management (Live Scan) __________\n" ) ,
+                            menu_verify_plots_and_directories ,
+                            menu_watch_and_replace,
+                            menu_import_plots ,
+                            Separator ("______________ Search (Live Scan) _____________\n" ) ,
                             menu_find_non_plots ,
                             menu_find_duplicates ,
-                            Separator ( ) ,
-                            menu_verify_plots_and_directories ,
-                            Separator ( ) ,
-                            menu_import_plots ,
-                            Separator ( ) ,
-                            "Done"]
-        else :
-            menu_options = [Separator ( ) ,
+                            Separator ( "____________ Reporting (Database)_____________\n"  ) ,
                             menu_show_farm_capacity,
                             menu_show_farm_usage ,
-                            Separator ( ) ,
-                            menu_find_non_plots ,
-                            menu_find_duplicates ,
-                            Separator ( ) ,
-                            menu_verify_plots_and_directories ,
-                            Separator ( ) ,
-                            menu_import_plots ,
-                            Separator ( ) ,
-                            "Done"]
+                            Separator ("________________________________________________\n" ) ,
+                            "Done"
+                            ]
 
         questions = [
             {
                 'type' : 'list' ,
                 'name' : 'do' ,
-                'message' : 'Select a farm management action' ,
+                'message' : 'Select an action' ,
                 'choices' : menu_options ,
 
             }
@@ -137,6 +143,8 @@ if __name__ == '__main__':
             do_show_farm_capacity ( )
         elif answers['do'] == menu_show_farm_usage:
             do_show_farm_usage ( )
+        elif answers['do'] == menu_watch_and_replace:
+            do_watch_and_replace()
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")

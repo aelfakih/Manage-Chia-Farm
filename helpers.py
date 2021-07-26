@@ -6,7 +6,7 @@ import sys
 import shutil
 import collections
 import logging
-from PyInquirer import style_from_dict, Token, prompt, Separator
+from PyInquirer import style_from_dict, Token, prompt
 
 #####  Needs cleanup #####
 def get_chia_farm_plots() :
@@ -147,13 +147,13 @@ def find_non_plots() :
         if is_verbose ( ) :
             logging.info ( "No non-plots files found!" )
 
-""" 
-Find plots with the same name in the farm, 
-so that we can prunce the farm and maintain 
-only one copy
-"""
 def find_duplicate_plots() :
-    from PyInquirer import prompt , Separator
+    """
+    Find plots with the same name in the farm,
+    so that we can prunce the farm and maintain
+    only one copy
+    """
+    from PyInquirer import prompt
     largest_capacity = 0
 
     print ( "* Checking for duplicate plot filenames ... " , end="" )
@@ -382,8 +382,10 @@ def initialize_me() :
     if is_verbose ( ) :
         logging.info ( "Found %s files in farm" % (number_of_plots) )
 
-""" For a given path/file find the mount point"""
 def find_mount_point(path):
+    """
+    For a given path/file find the mount point
+    """
     path = os.path.abspath(path)
     while not os.path.ismount(path):
         path = os.path.dirname(path)
@@ -399,11 +401,12 @@ def get_config(file_path):
     f.close()
     return config
 
-"""
-Check if the path we got is online. 
-This case happens in windows where drives could get re-ordered after a reboot
-"""
 def is_plot_online(plot):
+    """
+    Check if the path we got is online.
+    This case happens in windows where drives could get re-ordered after a reboot
+    """
+
     # importing os.path module
     import os.path
 
@@ -412,8 +415,10 @@ def is_plot_online(plot):
 
     return isdir
 
-""" Retrun free space in GiB """
 def get_free_space_GiB (dir):
+    """
+    Return free space in GiB
+    """
     drive = pathlib.Path ( dir ).parts[0]
     total , used , free = shutil.disk_usage ( drive )
     # convert to GiB
@@ -664,14 +669,14 @@ def do_import_plots(style):
         else :
             print ( "* No plots were moved from %s" % (import_from) )
 
-""" 
-Import a file to farm takes as an argument the full plot filename with path
-and the destination folder location.  The method copies the file into
-a .tmp file and show the progress on the screen.  Once the file has been completelty
-copied, it changes the name to it from .tmp to .plot so that it is included by
-chia.
-"""
 def do_import_file_into_farm(src, destination_folder, action):
+    """
+    Import a file to farm takes as an argument the full plot filename with path
+    and the destination folder location.  The method copies the file into
+    a .tmp file and show the progress on the screen.  Once the file has been completelty
+    copied, it changes the name to it from .tmp to .plot so that it is included by
+    chia.
+    """
     import shutil , os , sys, time
     from tqdm import tqdm
     basename = os.path.basename ( src )
@@ -692,7 +697,7 @@ def do_import_file_into_farm(src, destination_folder, action):
             logging.info ( "Copying %s as %s" % (src , dest) )
         with open ( src , 'rb' ) as src_f , open ( dest , 'wb' ) as dest_f :
             try :
-                for i in tqdm ( range ( num_chunks ) , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}{r_bar}' ) :
+                for i in tqdm ( range ( num_chunks ) , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:60}{r_bar}' ) :
                     chunk = src_f.read ( buff )
                     dest_f.write ( chunk )
             except IOError as e :
@@ -765,7 +770,7 @@ def do_scan_farm():
                 """ If there are files to scan, start loop """
                 if plots_at_location > 0:
                     print ( " %s plots found | Scanning:" % (plots_at_location) )
-                    with tqdm ( total=plots_at_location , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}{r_bar}' ) as pbar :
+                    with tqdm ( total=plots_at_location , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:60}{r_bar}' ) as pbar :
                         for plot in arr :
                             pbar.update ( 1 )
                             scanned = 0
@@ -879,7 +884,6 @@ def do_scan_farm():
                 do_changes_to_database ( f"DELETE FROM plots WHERE name = '{record[1]}'" )
             else:
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
-
 
 def get_chia_binary() :
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
@@ -1015,7 +1019,6 @@ def do_show_farm_distribution():
         data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both","Yes"]]
         stacked_bar_chart ( data , 40 )
 
-
 def do_show_farm_capacity():
     from database import get_results_from_database
     labels=[]
@@ -1076,6 +1079,11 @@ def get_session_id():
     data = get_results_from_database ( "SELECT scan_ukey FROM farm_scan ;" )
     return data[0][0]
 
+def do_watch_and_replace():
+    print ("*---------------------------------------------------")
+    print ("* Search and watch a location for NFTs.")
+    print ("* When found, replace an OG with NFT plot")
+    print ("*---------------------------------------------------" )
 
 
 #################### NOT ready to be used  ###################
