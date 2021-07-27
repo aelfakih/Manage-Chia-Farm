@@ -796,7 +796,7 @@ def do_scan_farm():
 
                                 if not scanned and not indirectory :
                                     filename = dir + '\\' + plot
-                                    if os.path.exists(filename)
+                                    if os.path.exists(filename):
                                         plot_size = bytes_to_gib( os.path.getsize ( filename ))
                                     else:
                                         plot_size = 0
