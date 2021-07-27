@@ -145,6 +145,7 @@ if __name__ == '__main__':
         elif answers['do'] == menu_show_farm_usage:
             do_show_farm_usage ( )
         elif answers['do'] == menu_watch_and_replace:
+            print("* WIP")
             #do_watch_and_replace()
         elif answers['do'] == "Done":
             loop = False
