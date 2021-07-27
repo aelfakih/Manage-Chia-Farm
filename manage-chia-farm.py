@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 A program to manage chia farms and maximize the used of space available to the farmer.
 You can download the latest from https://github.com/aelfakih/Manage-Chia-Farm
@@ -144,7 +145,7 @@ if __name__ == '__main__':
         elif answers['do'] == menu_show_farm_usage:
             do_show_farm_usage ( )
         elif answers['do'] == menu_watch_and_replace:
-            do_watch_and_replace()
+            #do_watch_and_replace()
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")

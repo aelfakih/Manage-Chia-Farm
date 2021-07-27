@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import subprocess
 import pathlib
 import os
@@ -794,7 +796,11 @@ def do_scan_farm():
 
                                 if not scanned and not indirectory :
                                     filename = dir + '\\' + plot
-                                    plot_size = bytes_to_gib( os.path.getsize ( filename ))
+                                    if os.path.exists(filename)
+                                        plot_size = bytes_to_gib( os.path.getsize ( filename ))
+                                    else:
+                                        plot_size = 0
+                                        logging.info(f"! Could not find {plot}, possibly moved while processing its data")
                                     if is_verbose ( ) :
                                         logging.info ( "Checking %s:" % (plot) )
                                         logging.info ( "Size: %s |" % (plot_size) )
@@ -1101,11 +1107,73 @@ def get_session_id():
     return data[0][0]
 
 def do_watch_and_replace():
+    from PyInquirer import prompt
+    from database import get_results_from_database
+    import logging, os
+    from pick import pick
+
+    from_drives=[]
+
     print ("*---------------------------------------------------")
     print ("* Search and watch a location for NFTs.")
     print ("* When found, replace an OG with NFT plot")
     print ("*---------------------------------------------------" )
-    print(get_extenstions_to_ignore())
+
+    style = get_pyinquirer_style()
+    questions = [
+        {
+            'type' : 'input' ,
+            'name' : 'watch' ,
+            'message' : 'Please indicate which directory to watch for NFTs' ,
+
+        }
+    ]
+    answers = prompt ( questions , style=style )
+    directory_to_watch = answers['watch']
+    if os.path.isdir(directory_to_watch ):
+        print(f"* Watching {directory_to_watch} for NFT files to drop in")
+        logging.info(f"* Watching {directory_to_watch} for NFT files to drop in")
+        print(answers)
+    else:
+        print (f"! Directory: {directory_to_watch} does not exist. Try again..")
+        return
+
+    if is_verbose ( ) :
+        logging.info("Getting list of potential destination locations")
+
+    results = get_results_from_database ("""
+    SELECT pd.drive as MOUNT, 
+    (select count(*) from plots where drive = pd.drive and type = 'NFT') as NFT, 
+    (select count(*) from plots where drive = pd.drive and type = 'OG') as OG ,
+    pd.drive_free,
+    pd.path
+    FROM plot_directory as pd
+    ORDER BY pd.drive;
+    """)
+    for line in results:
+        drive = line[0]
+        nft = line[1]
+        og = line[2]
+        accomodates = round(line[3]/101.5)
+        path = line[4]
+        total , used , free = shutil.disk_usage ( drive )
+        # convert to GiB
+        free = bytes_to_gib ( free )
+        total = bytes_to_gib ( total )
+        if og > 0:
+            from_drives.append (
+                f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
+
+    replace_drives=[]
+    title = f'WHICH OG plot directories to overwrite with NFTs found on {directory_to_watch}!'
+    options = from_drives
+    selected = pick ( options , title , multiselect=True , min_selection_count=1 )
+    for line in selected:
+        plot_directory = line[0]
+        replace_drives.append(plot_directory[plot_directory.find('[')+1:plot_directory.find(']')])
+
+
+    print(f"* Will be replacing OGs in {replace_drives} with NFTs found on {directory_to_watch}")
 
 
 #################### NOT ready to be used  ###################
