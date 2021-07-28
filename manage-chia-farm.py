@@ -41,12 +41,12 @@ initialize some of the variables needed in the program. Please do not change
 """
 menu_find_non_plots = "Find non-Plots"
 menu_find_duplicates = "Find Duplicate Plots"
-menu_import_plots = "Move Plots"
+menu_move_plots = "Move Plots"
 menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available Plot Storage Space"
 menu_show_farm_usage = "Show Farm Bar Graph Usage "
 menu_resolve_issues = "Resolve Issues Found"
-menu_watch_and_replace = "Watch For NFTs and Replace existing OGs"
+menu_replace_ogs = "Replace OG Plots"
 
 dynamic_menu_resolve_issues = ""
 
@@ -89,8 +89,7 @@ if __name__ == '__main__':
                             dynamic_menu_resolve_issues ,
                             Separator ("__________ Farm Management (Live Scan) __________\n" ) ,
                             menu_verify_plots_and_directories ,
-                            menu_watch_and_replace,
-                            menu_import_plots ,
+                            menu_move_plots ,
                             Separator ( "______________ Search (Live Scan) _____________\n"  ) ,
                             menu_find_non_plots ,
                             menu_find_duplicates ,
@@ -104,8 +103,7 @@ if __name__ == '__main__':
             menu_options = [
                             Separator ("__________ Farm Management (Live Scan) __________\n" ) ,
                             menu_verify_plots_and_directories ,
-                            menu_watch_and_replace,
-                            menu_import_plots ,
+                            menu_move_plots ,
                             Separator ("______________ Search (Live Scan) _____________\n" ) ,
                             menu_find_non_plots ,
                             menu_find_duplicates ,
@@ -133,8 +131,8 @@ if __name__ == '__main__':
             find_non_plots ( )
         elif answers['do'] == menu_find_duplicates :
             find_duplicate_plots ( )
-        elif answers['do'] == menu_import_plots:
-            do_import_plots(style)
+        elif answers['do'] == menu_move_plots:
+            do_move_plots(style,"move")
         elif answers['do'] == menu_verify_plots_and_directories:
             start_new_session()
             do_scan_farm()
@@ -144,9 +142,8 @@ if __name__ == '__main__':
             do_show_farm_capacity ( )
         elif answers['do'] == menu_show_farm_usage:
             do_show_farm_usage ( )
-        elif answers['do'] == menu_watch_and_replace:
-            print("* WIP")
-            #do_watch_and_replace()
+        elif answers['do'] == menu_replace_ogs:
+            do_move_plots(style,"replace")
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")
