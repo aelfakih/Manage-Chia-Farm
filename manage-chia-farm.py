@@ -134,7 +134,7 @@ if __name__ == '__main__':
         elif answers['do'] == menu_find_duplicates :
             find_duplicate_plots ( )
         elif answers['do'] == menu_move_plots:
-            do_move_plots(style,"move")
+            do_move_plots(style)
         elif answers['do'] == menu_verify_plots_and_directories:
             start_new_session()
             do_scan_farm()
@@ -144,8 +144,6 @@ if __name__ == '__main__':
             do_show_farm_capacity ( )
         elif answers['do'] == menu_show_farm_usage:
             do_show_farm_usage ( )
-        elif answers['do'] == menu_replace_ogs:
-            do_move_plots(style,"replace")
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")
