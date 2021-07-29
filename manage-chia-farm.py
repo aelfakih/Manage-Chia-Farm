@@ -29,11 +29,6 @@ from helpers import *
 from PyInquirer import style_from_dict, Token, prompt, Separator
 import logging
 
-log_filename = 'log\\audit.log'
-logging.basicConfig(filename=log_filename,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s %(funcName)s %(lineno)d %(levelname)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
-                    level=get_verbose_level())
 
 
 """ 
@@ -51,12 +46,19 @@ menu_replace_ogs = "Replace OG Plots"
 dynamic_menu_resolve_issues = ""
 
 if __name__ == '__main__':
-    style = get_pyinquirer_style ( )
 
     """ Check if the config.yaml exists, otherwise exit"""
     if not os.path.exists ( "config.yaml" ) :
         print("Error: config.yaml file not found. Please copy config.yaml.default and customize to your installation")
         exit()
+
+    log_filename = 'log\\audit.log'
+    logging.basicConfig ( filename=log_filename ,
+                          format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s %(funcName)s %(lineno)d %(levelname)s %(message)s' ,
+                          datefmt='%m/%d/%Y %I:%M:%S %p' ,
+                          level=get_verbose_level ( ) )
+
+    style = get_pyinquirer_style ( )
 
     """ Check if the chia binary is defined, otherwise exit"""
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
