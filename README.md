@@ -1,44 +1,24 @@
 ﻿# Manage-Chia-Farm
-
-## Demo
-Easily manage your Chia farm like a pro! 
+### Manage your Chia farm like a Pro! 
+> **NOTE:** Manage-Chia-Farm(MCF) was developed and tested with Python 3.9 on Windows 10 
 
 
 ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/mcf-demo.gif?raw=true)
 
 
 
+# 1. Features
 
-## Features
+Manage-Chia-Farm (MCF) is a **menu-driven-program**, which allows farmers to move, migrate, overwrite, verify and
+manage OG and NFT plots with a chia farm.  It speeds up the process of managing a farm and minimizes errors 
+due to manual data entry.
 
-This program helps chia farmers manage the thousands of plots within their farm, and supports the following
-features:
-  * **Menu-driven design**, allows farmer to navigate through available options and minimize errors due to
-    manual data entry.
-    
-    ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/main_menu.png?raw=true)
-    
+MCF is designed to handle the management of thousands of plots in chia farms and supports the following features:
 
-  * **Show Available Space**: This function scans the database and reports the available number of plots
-    that can be stored in the plot directory (assumes k32 plot size 101.5 GiB.
-    
-    ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/show_available_space.png?raw=true)
+![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/main_menu.png?raw=true)
 
-  * **Show Used Space**: This function scans the database and reports how the space is being used. It lists all the
-    mount points and show total size, how much it is used and free reported in GiB.
-    
-    ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/show_used_space.png?raw=true)
-    
-
-  * **Resolve Issues Found**: This scans the data found during the *Verify Plot Directories and Plots* and
-  give farmer the option to fix chia configuration file, and remove invalid plots.  (By default this option is
-  not visible in menu option, until an issue is detected after a farm/plots scan)
-  * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
-  extension and prompt manager to delete the files to clear space.
-  * **Find duplicate plots**: Search the farm for duplicate file names and prompt manager to delete duplicates 
-  and maintain one copy to clear up space (it has logic to remove duplicates with minimal impact on 
-  compactness of farm).
-  * **Verify Plot Directories and Plots** This is an **exhaustive and slow process** to test and verify all the 
+## 1.1 Farm Management
+ * **Verify Plot Directories and Plots** This is an **exhaustive and slow process** to test and verify all the 
     plots in the farm and learn about your farm to make management easier for larger farms.  Data collected is 
     saved in a sqlite db called chia-farm-stats.db which is stored locally. The program:
     * Checks that **directory plots are online** so that farmer can take action.
@@ -55,12 +35,33 @@ features:
     NOTE that if you ctrl-C out of manage-chia-farm while executing a move plot command, it will apply the selected 
     action on source file -- if you do not want to lose any plots, always use the *imported* option then manually 
     delete the source files)    
+  * **Overwrite OG Plots**: Allow farmers to automatically overwrite OGs when importing NFTs into farm 
+    without having to search for them or move them aroundm.  This is an important feature for farmers 
+    that have OG plots and are migrating into an all NFT plot configuration.
+ * **Resolve Issues Found**: This scans the data found during the *Verify Plot Directories and Plots* and
+  give farmer the option to fix chia configuration file, and remove invalid plots.  (By default this option is
+  not visible in menu option, until an issue is detected after a farm/plots scan)
+## 1.2 Search
+ * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
+  extension and prompt manager to delete the files to clear space.
+  * **Find duplicate plots**: Search the farm for duplicate file names and prompt manager to delete duplicates 
+  and maintain one copy to clear up space (it has logic to remove duplicates with minimal impact on 
+  compactness of farm).
 
-> Script was tested with python 3.9 on Windows 10 
+## 1.3 Reporting
+  * **Show Available Space**: This function scans the database and reports the available number of plots
+    that can be stored in mounted plot directories (assumes k32 plot size 101.5 GiB)
+    
+  * **Show Farm bar Graph Usage**: This function scans the database and reports how the space is being used. 
+    It lists all the mount points and shows total size, how much it is used and free reported size in GiB.
+    
+![Show Available Space](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/show_available_space.png?raw=true)
 
-## Supported Volume mounts
+![Show Used Space](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/show_used_space.png?raw=true)
 
-manage-chia-farm can detect these types of drive mounts and return space statistics:
+## 1.4 Multiple Volume Mount Support
+
+MCF detects these types of drive mounts and returns space statistics:
 * **Letter mounted drives** (i.e. D:\, E:\)
 * **Folder mounted drives**  In windows you can mount iscsi and usb drives as directories such
   as *c:\mnt\drive1* this allows the user not be limited to D-Z drive naming.
@@ -70,15 +71,7 @@ manage-chia-farm can detect these types of drive mounts and return space statist
 ![Three mount styles](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/drive_mount_styles.png?raw=true)
 
 
-# Upgrading from previous versions
-
-If you installed the project as described below, you can get the latest code changes by 
-executing the following command in the Manage-Chia-Farm directory
-
-`git pull origin master`
-
-
-# 1. Installation
+# 2. Installation (Git)
 
 Pre-requisites 
 * Python 3.9+
@@ -96,7 +89,14 @@ Load required libraries using the following command
 
 `pip install -r .\requirements.txt`
 
-# 2. Configuration
+## 2.1 Upgrading from previous versions (Git)
+
+If you installed the project as described below, you can get the latest code changes by 
+executing the following command in the Manage-Chia-Farm directory
+
+`git pull origin master`
+
+# 3. Configuration
 
 Before being able to start using the utility, we need to configure it by editing 
 the config.yaml.  Copy the default config.yaml
@@ -171,42 +171,18 @@ ignore_extensions:
 
 
 
-# 3. Usage
+# 4. Usage
 To run this program, execute the following command
 
 `python manage-chia-farm.py`
 
-# 4. Upgrades
-Use the *check_for_updates* flag in config.yaml to check for updates using **git**. This allows you to 
-get the latest version. 
 
-# Example output
+# Example Output
 ## Import Plots into Farm
-Running the Import plots option (also as stand alone ) you can move file created in madmax plotter into your 
-farm by using this utility.  This is what the utility does:
-1. After you select the DRIVE to import from, the program looks for .plot files and displays them as a confirmation
-1. If you agree to move them, it asks for destination and asks you if you want to delete the source files 
-   after copying or mark them as imported
-1. Based on your preferences, it will then copy the file from source to destination location 
-   (while adding a .tmp extension) so that chia does not try to open it.
-1. When it is done copying, it will remove the .tmp file and (delete or rename source)
-
-In the following example you can see that I was importing the plots from **J: drive**, which were
-freshly plotted with madmax, into the farm to folder **e:\AquaBird** .  I elected to keep the source 
-files as .imported (which I manually deleted after the import completed) 
-
 ![Import Plots into Farm](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/move_plots.png?raw=true)
 
 ## Verify Plot Directories and Plots
- 
-This option take a long time to run since it will execute the chia client to verify the validity of the plot.
-The data from the scan is stored in a local sqlite database called **chia-farm-stats.db** and you can browse it
-using any sqlite capable application. Try (https://sqlitebrowser.org/)
-
 ![Verify Plot Directories and Plots](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/verify_plot_directories_and_plots.png?raw=true)
-
-The database will be used in future updates to quickly find information about any plot in your farm and improve
-the overall speed of managing a large chia farm.
 
 
 # How to Support

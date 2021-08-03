@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 A program to manage chia farms and maximize the used of space available to the farmer.
 You can download the latest from https://github.com/aelfakih/Manage-Chia-Farm
@@ -26,39 +25,82 @@ except ImportError:
         ``io.UnsupportedOperation`` in Python 2"""
 
 from helpers import *
+from database import *
 from PyInquirer import style_from_dict, Token, prompt, Separator
 import logging
 
+log_filename = 'log\\audit.log'
+logging.basicConfig(filename=log_filename,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s %(funcName)s %(lineno)d %(levelname)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    level=get_verbose_level())
 
-
-""" 
-initialize some of the variables needed in the program. Please do not change 
 """
+ initialize some of the variables needed in the program. Please do not change
+ """
 menu_find_non_plots = "Find non-Plots"
 menu_find_duplicates = "Find Duplicate Plots"
-menu_move_plots = "Move Plots"
+menu_import_plots = "Move Plots"
+menu_overwrite_og_plots = "Overwrite OG Plots"
 menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available Plot Storage Space"
 menu_show_farm_usage = "Show Farm Bar Graph Usage "
 menu_resolve_issues = "Resolve Issues Found"
-menu_replace_ogs = "Replace OG Plots"
+menu_watch_and_replace = "Watch For NFTs and Replace existing OGs"
 
-dynamic_menu_resolve_issues = ""
+
+def get_mcf_menu(issues_found,ogs_found) :
+    """
+    initialize some of the variables needed in the program. Please do not change
+    """
+    menu_find_non_plots = "Find non-Plots"
+    menu_find_duplicates = "Find Duplicate Plots"
+    menu_import_plots = "Move Plots"
+    menu_overwrite_og_plots = "Overwrite OG Plots"
+    menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
+    menu_show_farm_capacity = "Show Available Plot Storage Space"
+    menu_show_farm_usage = "Show Farm Bar Graph Usage "
+    menu_resolve_issues = "Resolve Issues Found"
+    menu_watch_and_replace = "Watch For NFTs and Replace existing OGs"
+
+    dynamic_menu_resolve_issues = ""
+    menu_options = []
+
+    if issues_found:
+        dynamic_menu_resolve_issues = "%s (%s)" % (menu_resolve_issues , issues_found)
+
+
+    if issues_found:
+        menu_options.append ( Separator ( "___________________ Issues _____________________\n" ) )
+        menu_options.append(dynamic_menu_resolve_issues)
+
+    menu_options.append(Separator ( "__________ Farm Management (Live Scan) __________\n" ))
+    menu_options.append(menu_verify_plots_and_directories)
+    menu_options.append(menu_import_plots)
+
+    if ogs_found:
+        menu_options.append(menu_overwrite_og_plots)
+
+    menu_options.append(Separator ( "______________ Search (Live Scan) _____________\n" ))
+    menu_options.append(menu_find_non_plots)
+    menu_options.append(menu_find_duplicates)
+    menu_options.append(Separator ( "____________ Reporting (Database)_____________\n" ))
+    menu_options.append(menu_show_farm_capacity)
+    menu_options.append(menu_show_farm_usage)
+    menu_options.append(Separator ( "________________________________________________\n" ))
+    menu_options.append("Done")
+
+
+    return menu_options , dynamic_menu_resolve_issues
+
 
 if __name__ == '__main__':
+    style = get_pyinquirer_style ( )
 
     """ Check if the config.yaml exists, otherwise exit"""
     if not os.path.exists ( "config.yaml" ) :
         print("Error: config.yaml file not found. Please copy config.yaml.default and customize to your installation")
         exit()
-
-    log_filename = 'log\\audit.log'
-    logging.basicConfig ( filename=log_filename ,
-                          format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s %(funcName)s %(lineno)d %(levelname)s %(message)s' ,
-                          datefmt='%m/%d/%Y %I:%M:%S %p' ,
-                          level=get_verbose_level ( ) )
-
-    style = get_pyinquirer_style ( )
 
     """ Check if the chia binary is defined, otherwise exit"""
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
@@ -77,6 +119,15 @@ if __name__ == '__main__':
     initialize_me ( )
 
 
+    """
+    Decide if we show the Overwrite OG Plots menu
+    """
+    data = get_results_from_database("SELECT id FROM plots WHERE TYPE = 'OG'")
+    if len(data)>0:
+        ogs_found = 1
+    else:
+        ogs_found = 0
+
     loop=True
     while loop:
 
@@ -84,37 +135,9 @@ if __name__ == '__main__':
 
         """ add menu options when errors are found """
         issues_found = do_check_for_issues ( )
-        if issues_found > 0 :
-            dynamic_menu_resolve_issues = "%s (%s)" % (menu_resolve_issues,issues_found)
-            menu_options = [
-                            Separator ("___________________ Issues _____________________\n") ,
-                            dynamic_menu_resolve_issues ,
-                            Separator ("__________ Farm Management (Live Scan) __________\n" ) ,
-                            menu_verify_plots_and_directories ,
-                            menu_move_plots ,
-                            Separator ( "______________ Search (Live Scan) _____________\n"  ) ,
-                            menu_find_non_plots ,
-                            menu_find_duplicates ,
-                            Separator ( "____________ Reporting (Database)_____________\n"  ) ,
-                            menu_show_farm_capacity,
-                            menu_show_farm_usage,
-                            Separator ("________________________________________________\n" ) ,
-                            "Done"
-                            ]
-        else :
-            menu_options = [
-                            Separator ("__________ Farm Management (Live Scan) __________\n" ) ,
-                            menu_verify_plots_and_directories ,
-                            menu_move_plots ,
-                            Separator ("______________ Search (Live Scan) _____________\n" ) ,
-                            menu_find_non_plots ,
-                            menu_find_duplicates ,
-                            Separator ( "____________ Reporting (Database)_____________\n"  ) ,
-                            menu_show_farm_capacity,
-                            menu_show_farm_usage ,
-                            Separator ("________________________________________________\n" ) ,
-                            "Done"
-                            ]
+        menu_options , dynamic_menu_resolve_issues = get_mcf_menu (issues_found,ogs_found )
+
+
 
         questions = [
             {
@@ -127,14 +150,14 @@ if __name__ == '__main__':
         ]
         answers = prompt ( questions , style=style )
         if is_verbose() :
-            logging.info ( "Menu: %s" % (menu_find_non_plots) )
+            logging.info ( f"Menu: {answers['do']}" )
 
-        if answers['do'] == menu_find_non_plots:
+        if answers['do'] in menu_find_non_plots:
             find_non_plots ( )
         elif answers['do'] == menu_find_duplicates :
             find_duplicate_plots ( )
-        elif answers['do'] == menu_move_plots:
-            do_move_plots(style)
+        elif answers['do'] == menu_import_plots:
+            do_import_plots(style)
         elif answers['do'] == menu_verify_plots_and_directories:
             start_new_session()
             do_scan_farm()
@@ -144,6 +167,8 @@ if __name__ == '__main__':
             do_show_farm_capacity ( )
         elif answers['do'] == menu_show_farm_usage:
             do_show_farm_usage ( )
+        elif answers['do'] == menu_overwrite_og_plots:
+            do_menu_overwrite_og_plots(style)
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")

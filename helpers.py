@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import subprocess
 import pathlib
 import os
@@ -213,6 +211,8 @@ def find_duplicate_plots() :
                 os.remove ( file_to_delete )
                 if is_verbose ( ) :
                     logging.info ( "Deleting [%s]" % (file_to_delete) )
+
+            do_scan_farm ( )
         else :
             print ( indent ( "*" , "Skipping. No files deleted!" ) )
             if is_verbose ( ) :
@@ -221,6 +221,8 @@ def find_duplicate_plots() :
         print ( "[OK] None found!" )
         if is_verbose ( ) :
             logging.info ( "No duplicate names files found!" )
+
+
 
 def get_smallest_plot ( ):
     plot_dirs = get_plot_directories ( )
@@ -493,7 +495,7 @@ def print_spaces(input,length):
         i += 1
     return word
 
-def do_move_plots(style):
+def do_import_plots(style):
     import os , string
     from database import get_results_from_database
     from database import do_changes_to_database
@@ -525,7 +527,7 @@ def do_move_plots(style):
         drive = line[0]
         nft = line[1]
         og = line[2]
-        accommodates = round(line[3]/101.5)
+        accomodates = round(line[3]/101.5)
         path = line[4]
         total , used , free = shutil.disk_usage ( drive )
         # convert to GiB
@@ -536,7 +538,7 @@ def do_move_plots(style):
             logging.info ( f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ' )
 
         if line[3] > 101.5 :
-            to_drives.append(f"[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | Can accommodate {accommodates} k32 plots")
+            to_drives.append(f"[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | Can accommodate {accomodates} k32 plots")
 
     from_drives.sort()
     to_drives.sort()
@@ -639,9 +641,9 @@ def do_move_plots(style):
             used = bytes_to_gib(used)
             total_size_GiB = round(total_size_GiB,0)
 
-            if free < total_size_GiB:
-                print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_GiB, free))
-                print ("* You can move the remaining plots to a different destination later by re-running this utility. ")
+        if free < total_size_GiB:
+            print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_GiB, free))
+            print ("* You can move the remaining plots to a different destination later by re-running this utility. ")
 
         if import_decision == True :
             questions = [
@@ -681,6 +683,192 @@ def do_move_plots(style):
             do_scan_farm ( )
         else :
             print ( "* No plots were moved from %s" % (import_from) )
+def do_menu_overwrite_og_plots(style):
+    import os , string
+    from database import get_results_from_database
+    from database import do_changes_to_database
+
+    plots_to_import=[]
+    total_size_GiB= 0
+    confirm_decision = False
+
+    free = 0
+    used = 0
+    action_keep = "Keep it"
+    action_rename ="Keep and RENAME extension to 'IMPORTED'"
+    action_delete ="Delete it"
+
+    if is_verbose ( ) :
+        logging.info("Getting list of NFT source locations")
+
+    from_drives = get_list_nft_source_locations ( )
+    questions = [
+        {
+            'type' : 'list' ,
+            'name' : 'from' ,
+            'choices': from_drives,
+            'message' : 'Select NFT SOURCE location'
+
+        }
+    ]
+    answers = prompt ( questions , style=style )
+    import_from = answers['from'][answers['from'].find('[')+1:answers['from'].find(']')]
+    if import_from == "Other":
+        questions = [
+            {
+                'type' : 'input' ,
+                'name' : 'from' ,
+                'message' : 'Please enter SOURCE location'
+
+            }
+        ]
+        answers = prompt ( questions , style=style )
+        import_from = answers['from']
+    if import_from == "Cancel":
+        if is_verbose ( ) :
+            logging.info ( f'Cancelled  ' )
+        return
+    else:
+        if is_verbose ( ):logging.info ( f"Searching for .plot files in [{import_from}] ...")
+        print(f"* Searching for .plot files in [{import_from}] ...")
+        plots_to_import, nfts = get_plots_to_import ( import_from )
+        questions = [
+            {
+                'type' : 'confirm' ,
+                'name' : 'import' ,
+                'message' : f'Do you want to import these {nfts} files?' ,
+                'default' : False
+            }
+        ]
+        answers = prompt ( questions , style=style )
+        import_decision = answers['import']
+        if import_decision == True :
+            data = get_results_from_database ( f"SELECT COUNT(*) FROM plots WHERE type = 'OG'" )
+            for line in data :
+                ogs = line[0]
+            if nfts > ogs:
+                print (f"* You do not have enough OG space in your farm. You are importing {nfts} NFTs and there are {ogs} OGs in your farm.")
+                logging.info(f"* You do not have enough OG space in your farm. You are importing {nfts} NFTs and there are {ogs} OGs in your farm.")
+            questions = [
+                {
+                    'type' : 'confirm' ,
+                    'name' : 'import' ,
+                    'message' : f'ARE YOU SURE THAT YOU WANT TO OVERWRITE {nfts} of {ogs} OGS WITH NFTS?' ,
+                    'default' : False
+
+                }
+            ]
+            answers = prompt ( questions , style=style )
+            confirm_decision = answers['import']
+        else:
+            print ("* Skipping!")
+
+        if (plots_to_import) and (confirm_decision == True) and (import_decision == True):
+            for plot in plots_to_import:
+                print (f"for plot={plot}")
+                data = get_results_from_database(f"SELECT name,path FROM plots WHERE TYPE = 'OG' LIMIT 1")
+                if len(data) > 0:
+                    for line in data :
+                        name = line[0]
+                        path = line[1]
+                        filename = path+'\\'+name
+
+                print ( f"find OG filename={filename}" )
+                if os.path.exists ( filename ) :
+                    print ( f"* Removing OG FILE {filename}" )
+                    os.remove ( filename )
+                    print ( f"* DELETING DATABASE ENTRY FOR {filename}" )
+                    do_changes_to_database ( f"DELETE FROM plots WHERE name = '{name}'" )
+                    logging.info ( f"Replacing OG plot {filename}" )
+                    logging.info ( f"Deleting Database file and data base entry for {filename} type:OG" )
+                    print ( f"* CHECKING SPACE BEFORE COPYING {plot}" )
+                    """ Double Check if there is space before copying """
+                    total , used , free = shutil.disk_usage ( find_mount_point ( path ) )
+                    # convert to GiB
+                    if bytes_to_gib ( free ) >= 101.5 :
+                         print ( "* Copying %s to %s" % (plot , path) )
+                         logging.info ( f"Copying NFT plot {plot} into OG's location at {path}" )
+                         do_import_file_into_farm ( plot , path , "rename" )
+
+                         """ Reset the stats of the plot so that it is rescanned in new location"""
+                         do_changes_to_database (f"DELETE FROM plots WHERE name = '{os.path.basename ( plot )}'")
+                         logging.debug ( f"Resetting Database stats" )
+
+                         """ delete size of originating plot directory"""
+                         do_changes_to_database (
+                             "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( plot )) )
+
+                         """ delete size of destination plot directory"""
+                         do_changes_to_database (
+                             "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( path )) )
+                    # rescan farm after changes
+                    do_scan_farm ( )
+                else:
+                    print(f"{filename} not found!")
+
+        else :
+            print ( "* No plots were moved from %s" % (import_from) )
+
+
+def get_plots_to_import(import_from) :
+    from database import get_results_from_database
+
+    plots_to_import=[]
+    total_size_GiB=0
+
+    """ Walk the drive looking for .plot files """
+    nfts = 0
+    for root , dirs , files in os.walk ( import_from ) :
+        for file in files :
+            if file.endswith ( ".plot" ) :
+                type = "Unverified"
+                data = get_results_from_database ( f"SELECT type FROM plots WHERE name ='{file}'" )
+                if len ( data ) > 0 :
+                    for line in data :
+                        type = line[0]
+                filename = root + '\\' + file
+                plots_to_import.append ( filename )
+                size_GiB = bytes_to_gib ( os.path.getsize ( filename ) )
+                total_size_GiB += size_GiB
+                print ( f"> {filename} ({size_GiB} GiB)  (Format: {type})" )
+                nfts += 1
+                if is_verbose ( ) :
+                    logging.info ( f"{filename} ({size_GiB} GiB)  (Format: {type})" )
+
+    return plots_to_import, nfts
+
+
+def get_list_nft_source_locations() :
+    from database import  get_results_from_database
+    from_drives=[]
+
+    results = get_results_from_database ( """
+    SELECT pd.drive as MOUNT, 
+    (select count(*) from plots where drive = pd.drive and type = 'NFT') as NFT, 
+    (select count(*) from plots where drive = pd.drive and type = 'OG') as OG ,
+    pd.drive_free,
+    pd.path
+    FROM plot_directory as pd ;
+    """ )
+    for line in results :
+        drive = line[0]
+        nft = line[1]
+        og = line[2]
+        total , used , free = shutil.disk_usage ( drive )
+        # convert to GiB
+        free = bytes_to_gib ( free )
+        total = bytes_to_gib ( total )
+        if nft > 1 :
+            from_drives.append (
+                f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
+            if is_verbose ( ) :
+                logging.info (
+                    f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
+    from_drives.sort ( )
+    # added an option for manual input
+    from_drives.append ( f"[Other]{print_spaces ( 'other' , 25 )}| Location NOT listed in chia's plots directory" )
+    from_drives.append ( "[Cancel]" )
+    return from_drives
 
 
 def do_import_file_into_farm(src, destination_folder, action):
@@ -797,11 +985,7 @@ def do_scan_farm():
 
                                 if not scanned and not indirectory :
                                     filename = dir + '\\' + plot
-                                    if os.path.exists(filename):
-                                        plot_size = bytes_to_gib( os.path.getsize ( filename ))
-                                    else:
-                                        plot_size = 0
-                                        logging.info(f"! Could not find {plot}, possibly moved while processing its data")
+                                    plot_size = bytes_to_gib( os.path.getsize ( filename ))
                                     if is_verbose ( ) :
                                         logging.info ( "Checking %s:" % (plot) )
                                         logging.info ( "Size: %s |" % (plot_size) )
@@ -875,7 +1059,7 @@ def do_scan_farm():
     Let us scan the database and check that the files are still there,
     otherwise remove entry
     """
-    data = get_results_from_database(f"SELECT id,name,path FROM plots WHERE scan_ukey IS NULL")
+    data = get_results_from_database(f"SELECT id,name,path FROM plots")
     if len(data) > 0:
         print ("* Scanning farm for deleted or moved files...")
         for record in data:
@@ -916,6 +1100,9 @@ def get_extenstions_to_ignore() :
         logging.info("ignore_extensions variable was not found in config.yaml")
         return False
     return ignore_extensions
+
+
+
 
 def do_check_for_issues():
     from database import get_results_from_database
@@ -1074,17 +1261,44 @@ def do_show_farm_usage():
     print("* Bar Graph (Usage)                 | Total GiB > Legend : Plot Directory [Capacity]")
     print("* ----------------------------------------------------------------------")
 
+    # SELECT
+    # pd.drive as MOUNT ,
+    # (select count( *)
+    # from plots where
+    # drive = pd.drive and type = 'NFT') as NFT ,
+    # (select count( *)
+    # from plots where
+    # drive = pd.drive and type = 'OG') as OG ,
+    # pd.drive_free ,
+    # pd.path
+    # FROM
+    # plot_directory as pd;
+
+
+
+
     """ Check for invalid plots"""
-    data = get_results_from_database("SELECT * FROM plot_directory WHERE valid = 'Yes'")
+    data = get_results_from_database(
+        """
+        SELECT pd.path, 
+        pd.drive_used, 
+        pd.drive_free, 
+        (select count( *) from plots where drive = pd.drive and type = 'NFT') as NFT,
+        (select count( *) from plots where drive = pd.drive and type = 'OG') as OG 
+        FROM plot_directory as pd WHERE valid = 'Yes'
+        """
+        )
     for line in data:
-        path = line[1]
-        used = line[4]
-        free = line[5]
+        path = line[0]
+        used = line[1]
+        free = line[2]
+        nft_count = line[3]
+        og_count = line[4]
         pct_used = (used / (used + free)) * 100
         if free < 100.5:
-            drive_full = "[FULL]"
+            drive_full = f"[FULL] ({nft_count} NFTs/{og_count} OGs)"
         else:
-            drive_full = f"[{round(free/101.5)} Plots]"
+            drive_full = f"[{round(free/101.5)} Plots] ({nft_count} NFTs/{og_count} OGs)"
 
         data=[[used,"RED","Used"],
               [free,"GREEN","Free"],
@@ -1103,6 +1317,7 @@ def get_session_id():
     from database import get_results_from_database
     data = get_results_from_database ( "SELECT scan_ukey FROM farm_scan ;" )
     return data[0][0]
+
 
 
 #################### NOT ready to be used  ###################
