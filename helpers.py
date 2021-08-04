@@ -529,16 +529,17 @@ def do_import_plots(style):
         og = line[2]
         accomodates = round(line[3]/101.5)
         path = line[4]
-        total , used , free = shutil.disk_usage ( drive )
-        # convert to GiB
-        free = bytes_to_gib ( free )
-        total = bytes_to_gib ( total )
-        from_drives.append(f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ')
-        if is_verbose ( ) :
-            logging.info ( f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ' )
+        if os.path.exists(drive):
+            total , used , free = shutil.disk_usage ( drive )
+            # convert to GiB
+            free = bytes_to_gib ( free )
+            total = bytes_to_gib ( total )
+            from_drives.append(f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ')
+            if is_verbose ( ) :
+                logging.info ( f'[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free/total*100:5.2f})% GiB Free  |  ' )
 
-        if line[3] > 101.5 :
-            to_drives.append(f"[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | Can accommodate {accomodates} k32 plots")
+            if line[3] > 101.5 :
+                to_drives.append(f"[{drive}]{print_spaces(drive,25)}| {nft:3.0f} NFTs, {og:3.0f} OGs | Can accommodate {accomodates} k32 plots")
 
     from_drives.sort()
     to_drives.sort()
