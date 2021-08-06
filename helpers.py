@@ -516,12 +516,14 @@ def do_import_plots(style):
         logging.info("Getting list of potential source and destination locations")
 
     results = get_results_from_database ("""
-    SELECT pd.drive as MOUNT, 
+    SELECT DISTINCT(pd.path), 
     (select count(*) from plots where drive = pd.drive and type = 'NFT') as NFT, 
     (select count(*) from plots where drive = pd.drive and type = 'OG') as OG ,
     pd.drive_free,
     pd.path
-    FROM plot_directory as pd ;
+    FROM plot_directory as pd 
+    order by 
+    pd.path;
     """)
     for line in results:
         drive = line[0]
@@ -979,7 +981,7 @@ def do_scan_farm():
                             scanned = 0
                             indirectory=0
                             if (plot not in ignore_these) :
-                                data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}'")
+                                data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}' order by path")
                                 for line in data:
                                     scanned = line[0]
                                     indirectory = line[1]
