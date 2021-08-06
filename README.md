@@ -5,7 +5,25 @@
 
 ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/mcf-demo.gif?raw=true)
 
+# Why Manage-Chia-Farm?
 
+While chia provides farmers with the ability to validate plots and to detect duplicates, the GUI only provides 
+an error message and does allow farmers ways to remedy the issues, or to intelligently decide which is the
+best option to take, so that the farm maximizes its compactness.  MCF aims to bridge that gap by providing the
+tools to analyze what plots are valid, invalid, which files are sitting in the plot directories eating up space
+that can be deleted.  Give farmers the flexibility to exclude which file extensions to ignore from the analysis.
+
+When Chia started, many farmers started creating plots that were commonly referred to as 
+Old-Gangster (OG)s plots, which were used for Solo farming, those were upgraded to NFT plots as 
+of Version 1.2.0 and could be used for Pool farming.  As of version 1.4 of MCF farmers can point the
+application at a source location, and it would then import the incoming plots over existing OGs
+one-file-at-a-time.
+
+MCF is designed to run in the terminal on purpose, to make it more interoperable and to require less
+dependencies.  I hope you enjoy using it, and feel free to reach out if you encounter a bug that you would
+like me to look at.
+
+-- Adonis
 
 # 1. Features
 
