@@ -227,7 +227,7 @@ While the first instincts is to mount drives using letters on Windows, you soon 
 and windows will from time to time switch the letter it assigns drives, which may affect farmers that use
 subdirectory structures (another hint DO NOT use subdirectories yo do not need them).
 
-So create a directory structure in your home directory specifically designed to mount drives, and it 
+So create a directory structure in the root directory (I use "/mnt") specifically designed to mount drives, and it 
 would mirror the drive labels.
 
 ![Labeling an Mounting Drives](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/labeling_and_mounting.png?raw=true)
