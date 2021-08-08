@@ -168,8 +168,7 @@ def find_duplicate_plots() :
     largest_capacity = 0
 
     print ( "* Checking for duplicate plot filenames ... " , end="" )
-    if is_verbose ( ) :
-        logging.info("Looking for duplicate plots")
+    if is_verbose ( ) : logging.info("Looking for duplicate plots")
 
     """ Get the duplicate plotnames """
     duplicate_plotnames , plot_path = get_duplicte_plotnames ( get_plot_directories ( ) )
@@ -982,9 +981,11 @@ def do_scan_farm():
                             indirectory=0
                             if (plot not in ignore_these) :
                                 data = get_results_from_database(f"SELECT (select count(*) from plots where name= '{plot}') as scanned, (select count(*) from plots where name= '{plot}' and path='{dir}') as indirectory FROM plots where name ='{plot}' order by path")
+                                logging.debug ( f"DATA = {data}" )
                                 for line in data:
                                     scanned = line[0]
                                     indirectory = line[1]
+                                    logging.debug(f"DATA = {data}")
 
                                 if not scanned and not indirectory :
                                     filename = dir + '\\' + plot
@@ -997,34 +998,34 @@ def do_scan_farm():
                                     is_nft = "Pool public key: None"
                                     output = []
                                     chia_binary = get_chia_binary ( )
-                                    if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) :
-                                        output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
-                                        # if it is a valid plot, find out if it is NFT or OG
-                                        if found in output :
-                                            if is_verbose ( ) :
-                                                logging.info ( f"{plot} Plot Valid: Yes" )
-                                            valid = "Yes"
-
-                                            if is_nft in output :
+                                    if chia_binary:
+                                        if os.path.exists ( chia_binary ) and plot.endswith ( ".plot" ) :
+                                            output = subprocess.getoutput ( '%s plots check -g %s' % (chia_binary , plot) )
+                                            # if it is a valid plot, find out if it is NFT or OG
+                                            if found in output :
                                                 if is_verbose ( ) :
-                                                    logging.info ( f"{plot} Plot Type: NFT" )
-                                                type = "NFT"
+                                                    logging.info ( f"{plot} Plot Valid: Yes" )
+                                                valid = "Yes"
+
+                                                if is_nft in output :
+                                                    if is_verbose ( ) :
+                                                        logging.info ( f"{plot} Plot Type: NFT" )
+                                                    type = "NFT"
+                                                else :
+                                                    if is_verbose ( ) :
+                                                        logging.info ( f"{plot} Plot Type: OG" )
+                                                    type = "OG"
+
                                             else :
                                                 if is_verbose ( ) :
-                                                    logging.info ( f"{plot} Plot Type: OG" )
-                                                type = "OG"
-
-                                        else :
-                                            if is_verbose ( ) :
-                                                logging.info ( f"{plot} Plot Valid: No" )
-                                                logging.info ( f"{plot} Plot Type: Not Applicable" )
-                                            valid = "No"
-                                            type = "NA"
+                                                    logging.info ( f"{plot} Plot Valid: No" )
+                                                    logging.info ( f"{plot} Plot Type: Not Applicable" )
+                                                valid = "No"
+                                                type = "NA"
 
 
-                                        do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (
-                                            plot , dir , mount_point , plot_size , type , valid,session_id))
-
+                                            do_changes_to_database("REPLACE INTO plots (name, path, drive, size, type, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (
+                                                plot , dir , mount_point , plot_size , type , valid,session_id))
                                     else :
                                         logging.error ( "Chia binary was not found, please check config.yaml setting **" )
 
