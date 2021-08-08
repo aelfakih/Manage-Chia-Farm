@@ -209,3 +209,26 @@ If you enjoy this program and want to part with some Mojos, feel free to send it
 
 XCH: xch12gp5cmdwlrpdpvza8ttvjeu5ml76ytn7v94ujwzpwwvff6n6h3lsgxn65h
 
+# Windows 10 Tips and Tricks
+
+## Labeling Drives
+
+Avoid serializing your drives from 1 to N. Instead, encapsulate them inside the serialized number of the 
+JBOD.  Consider you have 20 JBODs and each one holds 10 drives. Instead of labeling them 1-20, label them
+BOX1-1..BOX11-10
+..
+BOX20-1..BOX20-20
+
+This approach, makes it easier to connect what you see happening on MCF or other system error messages. 
+
+## Mounting Drives 
+
+While the first instincts is to mount drives using letters on Windows, you soon will run out of drive letters
+and windows will from time to time switch the letter it assigns drives, which may affect farmers that use
+subdirectory structures (another hint DO NOT use subdirectories yo do not need them).
+
+So create a directory structure in your home directory specifically designed to mount drives, and it 
+would mirror the drive labels.
+
+![Labeling an Mounting Drives](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/labeling_and_mounting.png?raw=true)
+
