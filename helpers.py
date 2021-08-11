@@ -392,7 +392,7 @@ def initialize_me() :
     """ Get the plots available in the farm """
     chia_farm = get_chia_farm_plots ( )
     number_of_plots = len ( chia_farm )
-    print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted to this machine!" )
+    print ( "* Scanning your farm! Found" , number_of_plots , "plots mounted onto this machine!" )
     if is_verbose ( ) :
         logging.info ( "Found %s files in farm" % (number_of_plots) )
 
@@ -790,7 +790,7 @@ def do_menu_overwrite_og_plots(style):
                     if bytes_to_gib ( free ) >= 101.5 :
                          print ( "* Copying %s to %s" % (plot , path) )
                          logging.info ( f"Copying NFT plot {plot} into OG's location at {path}" )
-                         do_import_file_into_farm ( plot , path , "rename" )
+                         do_import_file_into_farm ( plot , path , get_default_action_after_replacing_ogs() )
 
                          """ Reset the stats of the plot so that it is rescanned in new location"""
                          do_changes_to_database (f"DELETE FROM plots WHERE name = '{os.path.basename ( plot )}'")
@@ -856,16 +856,17 @@ def get_list_nft_source_locations() :
         drive = line[0]
         nft = line[1]
         og = line[2]
-        total , used , free = shutil.disk_usage ( drive )
-        # convert to GiB
-        free = bytes_to_gib ( free )
-        total = bytes_to_gib ( total )
-        if nft > 1 :
-            from_drives.append (
-                f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
-            if is_verbose ( ) :
-                logging.info (
+        if os.path.exists ( drive ) :
+            total , used , free = shutil.disk_usage ( drive )
+            # convert to GiB
+            free = bytes_to_gib ( free )
+            total = bytes_to_gib ( total )
+            if nft > 1 :
+                from_drives.append (
                     f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
+                if is_verbose ( ) :
+                    logging.info (
+                        f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
     from_drives.sort ( )
     # added an option for manual input
     from_drives.append ( f"[Other]{print_spaces ( 'other' , 25 )}| Location NOT listed in chia's plots directory" )
@@ -953,7 +954,6 @@ def do_scan_farm():
         logging.info ( "Scanning Chia farm..." )
 
     for dir in plot_dirs :
-        print ( "* PLOT Directory %s: " % (dir), end="" )
 
         if os.path.isdir(dir):
             mount_point = find_mount_point(dir)
@@ -961,22 +961,22 @@ def do_scan_farm():
             mount_total = bytes_to_gib(mount_total)
             mount_used = bytes_to_gib(mount_used)
             mount_free = bytes_to_gib(mount_free)
-            print(" Valid |",end="")
+            logging.debug(f"Path {dir} is valid Valid")
             do_changes_to_database( "REPLACE INTO plot_directory (path, drive, drive_size, drive_used, drive_free, valid, scan_ukey) values ('%s','%s','%s','%s','%s','%s','%s')" % (dir , mount_point , mount_total, mount_used,mount_free, "Yes",session_id))
             """ Check if the plots defined in the chia config file are online"""
             if not is_plot_online(dir):
                 logging.error("%s plot is offline" % (dir))
-                print (" OFFLINE |",end="")
             else:
-                print (" ONLINE |",end="")
+                logging.debug (f" Plot {dir}is online")
                 arr = os.listdir ( dir )
                 plots_at_location = len(arr)
                 """ If there are files to scan, start loop """
                 if plots_at_location > 0:
-                    print ( " %s plots found | Scanning:" % (plots_at_location) )
-                    with tqdm ( total=plots_at_location , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:60}{r_bar}' ) as pbar :
+                    logging.debug ( " %s plots found. " % (plots_at_location) )
+                    with tqdm ( total=plots_at_location , bar_format='{desc:<25}{percentage:<3.0f}%|{bar:60}{r_bar}' ) as pbar :
                         for plot in arr :
                             pbar.update ( 1 )
+                            pbar.set_description ( "%s " % (dir) )
                             scanned = 0
                             indirectory=0
                             if (plot not in ignore_these) :
@@ -1092,11 +1092,29 @@ def do_scan_farm():
                 do_changes_to_database(f"UPDATE plots SET scan_ukey = '{session_id}' WHERE id = {id}")
 
 def get_chia_binary() :
+    import logging
     chia_binary = get_config ( 'config.yaml' ).get ( 'chia_binary' )
     if not chia_binary:
-        logging.error("chia_binary variable was not found in config.yaml, please cnfigure and restart application")
+        logging.error("chia_binary variable was not found in config.yaml, please configure and restart application")
         exit()
+    logging.debug(f"* chia_binary location: {chia_binary}")
     return chia_binary
+
+def get_default_action_after_replacing_ogs() :
+    import logging
+    """
+    Farmers can automatically overwrite OGS with NFTS that which are found at a specified locations.
+    This method, tells the calling method what to do with the plot after it has been imported.
+    the default is rename, which is appending the word "imported" to the end of the filename
+    """
+    default_action_after_replacing_ogs = get_config ( 'config.yaml' ).get ( 'default_action_after_replacing_ogs' )
+
+    if not default_action_after_replacing_ogs:
+        default_action_after_replacing_ogs = "rename"
+
+    logging.debug(f"* Default Action After Replacing OGS is Set to {default_action_after_replacing_ogs}")
+    return default_action_after_replacing_ogs
+
 
 def get_extenstions_to_ignore() :
     ignore_extensions = get_config ( 'config.yaml' ).get ( 'ignore_extensions' )
@@ -1142,6 +1160,8 @@ def do_check_for_issues():
 def do_resolve_issues():
     from database import get_results_from_database
     from database import do_changes_to_database
+    from tqdm import tqdm
+    import logging
 
     issues = 0
     style = get_pyinquirer_style ( )
@@ -1193,16 +1213,23 @@ def do_resolve_issues():
         ]
         answers = prompt ( questions , style=style )
         if answers['do'] :
-            print ( "* Deleting invalid files plot files..." )
-            for line in data :
-                path = line[2]
-                file = line[1]
-                filename = path + "\\" + file
-                os.remove ( filename )
-                do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
-                # reset the plot_directory_stats for the removed files
-                do_changes_to_database (
-                    "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( filename )) )
+            print ( "* Deleting invalid plot ..." )
+            for i in tqdm ( range ( len ( data ) ) , bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:60}{r_bar}' ) :
+                for line in data :
+                    path = line[2]
+                    file = line[1]
+                    filename = path + "\\" + file
+                    if filename in get_extenstions_to_ignore():
+                        ignore = True
+                    else:
+                        ignore = False
+
+                    if not ignore:
+                        os.remove ( filename )
+                        do_changes_to_database("DELETE FROM plots WHERE ID = %s" % (line[0]))
+                        # reset the plot_directory_stats for the removed files
+                        do_changes_to_database (
+                            "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( filename )) )
         else :
             print ( "* No changes made to chia configuration" )
 

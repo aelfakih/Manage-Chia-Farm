@@ -15,3 +15,8 @@ check_for_update: true
 # NOTE! all extensions MUST start with a (.) dot. for example .txt , .plot.tmp
 ignore_extensions:
  - .plot.tmp
+# what do you want to be the default action on the original plot after replacing an OG plot?
+# rename -- adds suffix imported to original plot (if you are paranoid and want to make they are copied stay in default mode)
+# delete -- delete original plot (save space and auto cleanup, if you press Ctr-C you WILL lose the last plot being copied)
+# keep -- keep  original plot (same as rename but name stays same, it messes us with Chia stats though)
+default_action_after_replacing_ogs: delete
