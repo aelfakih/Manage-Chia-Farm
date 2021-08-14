@@ -46,7 +46,8 @@ menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available Plot Storage Space"
 menu_show_farm_usage = "Show Farm Bar Graph Usage "
 menu_resolve_issues = "Resolve Issues Found"
-menu_watch_and_replace = "Watch For NFTs and Replace existing OGs"
+menu_sync_chia_forks = "Sync 'Plot Directory' with Supported Chia Forks found on machine"
+
 
 
 def get_mcf_menu(issues_found,ogs_found) :
@@ -61,14 +62,13 @@ def get_mcf_menu(issues_found,ogs_found) :
     menu_show_farm_capacity = "Show Available Plot Storage Space"
     menu_show_farm_usage = "Show Farm Bar Graph Usage "
     menu_resolve_issues = "Resolve Issues Found"
-    menu_watch_and_replace = "Watch For NFTs and Replace existing OGs"
+    menu_sync_chia_forks = "Sync 'Plot Directory' with Supported Chia Forks found on machine"
 
     dynamic_menu_resolve_issues = ""
     menu_options = []
 
     if issues_found:
         dynamic_menu_resolve_issues = "%s (%s)" % (menu_resolve_issues , issues_found)
-
 
     if issues_found:
         menu_options.append ( Separator ( "___________________ Issues _____________________\n" ) )
@@ -87,6 +87,8 @@ def get_mcf_menu(issues_found,ogs_found) :
     menu_options.append(Separator ( "____________ Reporting (Database)_____________\n" ))
     menu_options.append(menu_show_farm_capacity)
     menu_options.append(menu_show_farm_usage)
+    menu_options.append(Separator ( "________________________________________________\n" ))
+    menu_options.append(menu_sync_chia_forks)
     menu_options.append(Separator ( "________________________________________________\n" ))
     menu_options.append("Done")
 
@@ -169,6 +171,8 @@ if __name__ == '__main__':
             do_show_farm_usage ( )
         elif answers['do'] == menu_overwrite_og_plots:
             do_menu_overwrite_og_plots(style)
+        elif answers['do'] == menu_sync_chia_forks:
+            do_sync_chia_forks ( )
         elif answers['do'] == "Done":
             loop = False
             print("* Goodbye!")

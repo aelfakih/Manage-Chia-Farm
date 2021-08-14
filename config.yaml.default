@@ -1,22 +1,38 @@
 # location of Chia's configuration file. It is used to navigate the plots directories
 chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
+
 # location of chia executable, used when importing plots to verify that they belong to this farm
 chia_binary: C:\Users\USERNAME\AppData\Local\chia-blockchain\app-VERSION\resources\app.asar.unpacked\daemon\chia.exe
+
 # when verbose is true, the program ouputs extra information into log\audit.log
 verbose: false
+
 # what level of logging do you want to show, by default it is ERROR
 # Available options are ERROR, INFO, DEBUG
 verbose_level: ERROR
+
 # Where do you want to store the database.  If not defined, it is stored in local directory "db"
 # database_location: db
 # check for git updates on startup
 check_for_update: true
+
 # Ignore the following file extensions when looking for non-plots for deletion
 # NOTE! all extensions MUST start with a (.) dot. for example .txt , .plot.tmp
 ignore_extensions:
  - .plot.tmp
+
 # what do you want to be the default action on the original plot after replacing an OG plot?
 # rename -- adds suffix imported to original plot (if you are paranoid and want to make they are copied stay in default mode)
 # delete -- delete original plot (save space and auto cleanup, if you press Ctr-C you WILL lose the last plot being copied)
 # keep -- keep  original plot (same as rename but name stays same, it messes us with Chia stats though)
-default_action_after_replacing_ogs: delete
+# default_action_after_replacing_ogs: delete
+
+# Synchronize your farm's Chia plot_directory with specified forks installed on this machine
+#chia_forks:
+# - C:\Users\USERNAME\.chaingreen
+# - C:\Users\USERNAME\.flax
+# - C:\Users\USERNAME\.flora
+# - C:\Users\USERNAME\.goji-blockchain
+# - C:\Users\USERNAME\.hddcoin
+# - C:\Users\USERNAME\.seno2
+# - C:\Users\USERNAME\.spare-blockchain

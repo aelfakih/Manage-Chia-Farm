@@ -1358,6 +1358,47 @@ def get_session_id():
     data = get_results_from_database ( "SELECT scan_ukey FROM farm_scan ;" )
     return data[0][0]
 
+def save_config(filename,config_data):
+    import yaml
+    tempfile = filename + str(os.getpid())
+    with open(tempfile, "w") as f:
+        yaml.safe_dump(config_data, f)
+    shutil.move(tempfile, filename)
+
+
+def load_config(filename):
+    import yaml
+    if not os.path.isfile(filename):
+        print(f"can't find {filename}")
+    r = yaml.safe_load(open(filename, "r"))
+    return r
+
+
+def do_sync_chia_forks ():
+    import logging
+    print ( "* Synchronizing Chia's Plot Directories with the following chia forks..." )
+    logging.info("* Looking for chia forks to sync directory plots with")
+    # Load the Chia Config file
+    chia_data = load_config(get_config ( 'config.yaml' ).get ( 'chia_config_file' ))
+    # lets loop through the known chia forks
+    chia_forks=get_config ( 'config.yaml' ).get ( 'chia_forks' )
+    # Loaded the chia forks in the config files
+    logging.info(f"* found the following forks defined in config file {chia_forks}")
+    for fork_name in chia_forks:
+        fork_config_file = fork_name + "\mainnet\config\config.yaml"
+        if os.path.exists(fork_config_file):
+            print(f"* {fork_name}")
+            logging.debug(f"Fork name: {fork_name}...")
+            fork_data = load_config(fork_config_file)
+            for item in fork_data['harvester']['plot_directories']:
+                fork_data['harvester']['plot_directories'].remove ( item )
+            # Add Chia's plot directory
+            for item in chia_data['harvester']['plot_directories']:
+                fork_data['harvester']['plot_directories'].append(item)
+
+            save_config(fork_config_file,fork_data)
+
+
 
 
 #################### NOT ready to be used  ###################

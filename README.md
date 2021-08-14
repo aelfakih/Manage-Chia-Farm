@@ -43,22 +43,28 @@ MCF is designed to handle the management of thousands of plots in chia farms and
     * **Verifies plots are valid** for the installed chia instance.
     * **Classifies the plots as NFT or OG**.
     * Saves location and size  
-  * **Move plots**: Allows farmer to select source location from list and search for plots to move.  It also helps 
-    farmer in understanding how much available at destination.
-    This function allows the consolidation of plots into a location as you upgrade your drives or 
-    move plots from plotters to farm.  Source files can be:
-    * Kept at source location.
-    * Renamed (have an .imported extenstion)
-    *  or deleted.
-    NOTE that if you ctrl-C out of manage-chia-farm while executing a move plot command, it will apply the selected 
-    action on source file -- if you do not want to lose any plots, always use the *imported* option then manually 
-    delete the source files)    
-  * **Overwrite OG Plots**: Allow farmers to automatically overwrite OGs when importing NFTs into farm 
-    without having to search for them or move them aroundm.  This is an important feature for farmers 
-    that have OG plots and are migrating into an all NFT plot configuration.
+ * **Move plots**: Allows farmer to select source location from list and search for plots to move.  It also helps 
+   farmer in understanding how much available at destination.
+   This function allows the consolidation of plots into a location as you upgrade your drives or 
+   move plots from plotters to farm.  Source files can be:
+   * Kept at source location.
+   * Renamed (have an .imported extenstion)
+   *  or deleted.
+   NOTE that if you ctrl-C out of manage-chia-farm while executing a move plot command, it will apply the selected 
+   action on source file -- if you do not want to lose any plots, always use the *imported* option then manually 
+   delete the source files)    
+ * **Overwrite OG Plots**: Allow farmers to automatically overwrite OGs when importing NFTs into farm 
+   without having to search for them or move them aroundm.  This is an important feature for farmers 
+   that have OG plots and are migrating into an all NFT plot configuration.
  * **Resolve Issues Found**: This scans the data found during the *Verify Plot Directories and Plots* and
   give farmer the option to fix chia configuration file, and remove invalid plots.  (By default this option is
   not visible in menu option, until an issue is detected after a farm/plots scan)
+ * **Synchronize Chia Forks**: Keep the *plot directories* configuration of all chia-forks (https://xchforks.com/)
+   installed on you machine in sync with your main Chia configuration. As of version 1.6, a new variable is available 
+   in MCF's config.yaml to control which forks you want to scan and update.
+
+![Sync Chia Forks](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/sync_chia_forks.gif?raw=true)
+
 ## 1.2 Search
  * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
   extension and prompt manager to delete the files to clear space.
@@ -186,7 +192,34 @@ MCF on a plotter machine and you do not want to accidentaly delete the .tmp file
 ignore_extensions:
  - .plot.tmp
 ```
+### default_action_after_replacing_ogs (Optional)
+You can overwrite what happens after an OG import occurs. By default, the original NFT is renamed .imported, so that
+it can be cleaned up later after checking that everything went well.
+```buildoutcfg
+# what do you want to be the default action on the original plot after replacing an OG plot?
+# rename -- adds suffix imported to original plot
+# delete -- delete original plot
+# keep -- keep  original plot
+# default_action_after_replacing_ogs: rename
+```
 
+### chia_forks (Optional):
+Chia farmers can farm other green coins with the same farm (chia forks, see https://xchforks.com/ for a comprehensive list). 
+MCF makes farming other coins very easy. Just install the chia forks of your choice and make sure they are using the same
+keys to be able to use the same plots.  Then configure the chia_forks value and MCF will synchronize them to your main
+chia farm plot directories configuration settings. (**Available as of version 1.6**)
+
+```buildoutcfg
+# Synchronize your farm's Chia plot_directory with specified forks installed on this machine
+chia_forks:
+ - C:\Users\USERNAME\.chaingreen
+ - C:\Users\USERNAME\.flax
+ - C:\Users\USERNAME\.flora
+ - C:\Users\USERNAME\.goji-blockchain
+ - C:\Users\USERNAME\.hddcoin
+ - C:\Users\USERNAME\.seno2
+ - C:\Users\USERNAME\.spare-blockchain
+```
 
 
 # 4. Usage
