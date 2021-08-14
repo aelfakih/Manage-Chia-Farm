@@ -87,8 +87,9 @@ def get_mcf_menu(issues_found,ogs_found) :
     menu_options.append(Separator ( "____________ Reporting (Database)_____________\n" ))
     menu_options.append(menu_show_farm_capacity)
     menu_options.append(menu_show_farm_usage)
-    menu_options.append(Separator ( "________________________________________________\n" ))
-    menu_options.append(menu_sync_chia_forks)
+    if get_config ( 'config.yaml' ).get ( 'chia_forks' ) :
+        menu_options.append(Separator ( "________________________________________________\n" ))
+        menu_options.append(menu_sync_chia_forks)
     menu_options.append(Separator ( "________________________________________________\n" ))
     menu_options.append("Done")
 
