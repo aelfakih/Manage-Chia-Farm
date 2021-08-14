@@ -331,9 +331,10 @@ def stacked_bar_chart(data , max_length) :
     segment_two_color = data[1][1]
     segment_two_label = data[1][2]
 
-    line_label = data[2][0]
+    bar_chart_prefix = data[2][0]
     label_style = data[2][1] # Label Style: accepts: both, percent, count, none
     label_total = data[2][2] # Add Total: accepts: Yes, No
+    bar_chart_suffix = data[2][3]
 
 
     segment_one_percent = 100 * segment_one_length / (segment_two_length + segment_one_length)
@@ -341,6 +342,9 @@ def stacked_bar_chart(data , max_length) :
     total_segments = segment_two_length + segment_one_length
 
     segment_one_normalized = round ( (segment_one_length / (segment_one_length + segment_two_length)) * max_length )
+
+    if bar_chart_prefix:
+        sys.stdout.write ( Fore.RESET + Back.RESET + f"{bar_chart_prefix} |" )
 
     for i in range ( max_length ) :
         if i <= segment_one_normalized :
@@ -367,8 +371,8 @@ def stacked_bar_chart(data , max_length) :
         sys.stdout.write ( Fore.RESET + Back.RESET + f" {segment_two_length}" )
     if label_style in "both" or label_style in "percent" :
         sys.stdout.write ( Fore.RESET + Back.RESET + f" {segment_two_percent:3.0f}%" )
-    if line_label:
-        sys.stdout.write ( Fore.RESET + Back.RESET + f" : {line_label}" )
+    if bar_chart_suffix:
+        sys.stdout.write ( Fore.RESET + Back.RESET + f" : {bar_chart_suffix}" )
     print ( Style.RESET_ALL )
 
 def print_top_menu() :
@@ -468,7 +472,6 @@ def get_verbose_level() :
         return logging.ERROR
 
 def get_plot_directories():
-    import yaml
     config = get_config(get_config('config.yaml').get('chia_config_file'))
     return config.get('harvester').get('plot_directories')
 
@@ -670,17 +673,13 @@ def do_import_plots(style):
         if (plots_to_import) and (import_decision == True) and (import_to):
             for plot in plots_to_import :
                 print ( "* Copying %s to %s" % (plot , import_to) )
-                do_import_file_into_farm(plot,import_to, import_action)
-
-                """ Reset the stats of the plot so that it is rescanned in new location"""
-                do_changes_to_database("DELETE FROM plots WHERE name = '%s'" % (os.path.basename(plot)))
-
-                """ delete size of originating plot directory"""
-                do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point( plot )) )
-
-                """ delete size of destination plot directory"""
-                do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( import_to )) )
-
+                if do_import_file_into_farm(plot,import_to, import_action):
+                    # Reset the stats of the plot so that it is rescanned in new location
+                    do_changes_to_database("DELETE FROM plots WHERE name = '%s'" % (os.path.basename(plot)))
+                    # delete size of originating plot directory
+                    do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point( plot )) )
+                    # delete size of destination plot directory
+                    do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( import_to )) )
             # rescan farm after changes
             do_scan_farm ( )
         else :
@@ -784,25 +783,19 @@ def do_menu_overwrite_og_plots(style):
                     logging.info ( f"Replacing OG plot {filename}" )
                     logging.info ( f"Deleting Database file and data base entry for {filename} type:OG" )
                     print ( f"* CHECKING SPACE BEFORE COPYING {plot}" )
-                    """ Double Check if there is space before copying """
+                    # Double Check if there is space before copying
                     total , used , free = shutil.disk_usage ( find_mount_point ( path ) )
                     # convert to GiB
                     if bytes_to_gib ( free ) >= 101.5 :
                          print ( "* Copying %s to %s" % (plot , path) )
                          logging.info ( f"Copying NFT plot {plot} into OG's location at {path}" )
-                         do_import_file_into_farm ( plot , path , get_default_action_after_replacing_ogs() )
-
-                         """ Reset the stats of the plot so that it is rescanned in new location"""
-                         do_changes_to_database (f"DELETE FROM plots WHERE name = '{os.path.basename ( plot )}'")
-                         logging.debug ( f"Resetting Database stats" )
-
-                         """ delete size of originating plot directory"""
-                         do_changes_to_database (
-                             "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( plot )) )
-
-                         """ delete size of destination plot directory"""
-                         do_changes_to_database (
-                             "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( path )) )
+                         if do_import_file_into_farm ( plot , path , get_default_action_after_replacing_ogs() ):
+                             # Reset the stats of the plot so that it is rescanned in new location
+                             do_changes_to_database (f"DELETE FROM plots WHERE name = '{os.path.basename ( plot )}'")
+                             # delete size of originating plot directory
+                             do_changes_to_database ("DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( plot )) )
+                             # delete size of destination plot directory
+                             do_changes_to_database ("DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( path )) )
                     # rescan farm after changes
                     do_scan_farm ( )
                 else:
@@ -888,14 +881,15 @@ def do_import_file_into_farm(src, destination_folder, action):
     dest = destination_folder + '\\' + basename + '.tmp'
     f_size = os.stat ( src ).st_size
     buff = 10485760  # 1024**2 * 10 = 10M
-
-    disk_label = pathlib.Path ( destination_folder ).parts[0]
+    # Find the usage around the mount point
+    disk_label = find_mount_point(destination_folder)
     dest_total , dest_used , dest_free = shutil.disk_usage ( disk_label )
 
     if dest_free < f_size:
         if is_verbose ( ) :
             logging.info (f"Copying was skipped for lack of available space at {disk_label} ")
         print(f"! Copying was skipped for lack of available space at {disk_label}")
+        return False
     else:
         num_chunks = f_size // buff + 1
         if is_verbose ( ) :
@@ -928,6 +922,7 @@ def do_import_file_into_farm(src, destination_folder, action):
 
 
                 print ( f'Done! Copied {bytes_to_gib(f_size)} GiB' )
+    return True
 
 def get_plots_in_list( list ) :
     # find files that have .plot extension
@@ -1100,6 +1095,18 @@ def get_chia_binary() :
     logging.debug(f"* chia_binary location: {chia_binary}")
     return chia_binary
 
+def get_sync_plot_dirs_with_forks() :
+    import logging
+
+    sync_plot_directory_with_locally_install_forks = get_config ( 'config.yaml' ).get ( 'sync_plot_directory_with_locally_install_forks' )
+
+    if not sync_plot_directory_with_locally_install_forks:
+        sync_plot_directory_with_locally_install_forks = False
+
+    logging.debug(f"* sync_plot_directory_with_locally_install_forks is set to {sync_plot_directory_with_locally_install_forks}")
+    return sync_plot_directory_with_locally_install_forks
+
+
 def get_default_action_after_replacing_ogs() :
     import logging
     """
@@ -1259,7 +1266,9 @@ def do_show_farm_distribution():
             logging.info("No NFT or OG plots found!")
         print("* Please run the 'Verify Plot Directories and Plots' to scan the farm for NFTs, OGs and Validate plots...")
     else:
-        data=[[nft,"GREEN","NFT"],[og,"YELLOW","OG"],["","both","Yes"]]
+        data=[[nft,"GREEN","NFT"],
+              [og,"YELLOW","OG"],
+              ["","both","Yes",""]]
         stacked_bar_chart ( data , 40 )
 
 def do_show_farm_capacity():
@@ -1327,13 +1336,13 @@ def do_show_farm_usage():
         og_count = line[4]
         pct_used = (used / (used + free)) * 100
         if free < 100.5:
-            drive_full = f"[FULL] ({nft_count} NFTs/{og_count} OGs)"
+            drive_full = f"[Drive Full - {nft_count:>3.0f} NFTs/{og_count:>3.0f} OGs]"
         else:
-            drive_full = f"[{round(free/101.5)} Plots] ({nft_count} NFTs/{og_count} OGs)"
+            drive_full = f"[{round(free/101.5)} K32 Spots - {nft_count:>3.0f} NFTs/{og_count:>3.0f} OGs]"
 
         data=[[used,"RED","Used"],
               [free,"GREEN","Free"],
-              [path.ljust(25) + drive_full,"percent","Yes"]]
+              [path.ljust(25) ,"percent","Yes", drive_full]]
         stacked_bar_chart ( data , 40 )
 
 def start_new_session():
