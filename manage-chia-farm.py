@@ -42,7 +42,7 @@ menu_find_non_plots = "Find non-Plots"
 menu_find_duplicates = "Find Duplicate Plots"
 menu_import_plots = "Move Plots"
 menu_overwrite_og_plots = "Overwrite OG Plots"
-menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
+menu_verify_plots_and_directories = "Scan and Verify Plot Directories and Plots"
 menu_show_farm_capacity = "Show Available Plot Storage Space"
 menu_show_farm_usage = "Show Farm Bar Graph Usage "
 menu_resolve_issues = "Resolve Issues Found"
@@ -58,7 +58,7 @@ def get_mcf_menu(issues_found,ogs_found) :
     menu_find_duplicates = "Find Duplicate Plots"
     menu_import_plots = "Move Plots"
     menu_overwrite_og_plots = "Overwrite OG Plots"
-    menu_verify_plots_and_directories = "Verify Plot Directories and Plots"
+    menu_verify_plots_and_directories = "Scan and Verify Plot Directories and Plots"
     menu_show_farm_capacity = "Show Available Plot Storage Space"
     menu_show_farm_usage = "Show Farm Bar Graph Usage "
     menu_resolve_issues = "Resolve Issues Found"
@@ -74,17 +74,17 @@ def get_mcf_menu(issues_found,ogs_found) :
         menu_options.append ( Separator ( "___________________ Issues _____________________\n" ) )
         menu_options.append(dynamic_menu_resolve_issues)
 
-    menu_options.append(Separator ( "__________ Farm Management (Live Scan) __________\n" ))
+    menu_options.append(Separator ( "______________ Farm Management  ________________\n" ))
     menu_options.append(menu_verify_plots_and_directories)
     menu_options.append(menu_import_plots)
 
     if ogs_found:
         menu_options.append(menu_overwrite_og_plots)
 
-    menu_options.append(Separator ( "______________ Search (Live Scan) _____________\n" ))
-    menu_options.append(menu_find_non_plots)
-    menu_options.append(menu_find_duplicates)
-    menu_options.append(Separator ( "____________ Reporting (Database)_____________\n" ))
+    #menu_options.append(Separator ( "______________ Search (Live Scan) _____________\n" ))
+    #menu_options.append(menu_find_non_plots)
+    #menu_options.append(menu_find_duplicates)
+    menu_options.append(Separator ( "________________ Reporting ______________________\n" ))
     menu_options.append(menu_show_farm_capacity)
     menu_options.append(menu_show_farm_usage)
     if get_config ( 'config.yaml' ).get ( 'chia_forks' ) :
@@ -163,6 +163,8 @@ if __name__ == '__main__':
             do_import_plots(style)
         elif answers['do'] == menu_verify_plots_and_directories:
             start_new_session()
+            find_non_plots ( )
+            find_duplicate_plots ( )
             do_scan_farm()
         elif answers['do'] == dynamic_menu_resolve_issues:
             do_resolve_issues()

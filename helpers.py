@@ -41,7 +41,7 @@ def get_non_plots_in_farm( chia_farm ) :
 
     ignore_extensions = get_extenstions_to_ignore ( )
     if ignore_extensions:
-        print ("* Ignoring files ending with ", end="")
+        print ("! Ignoring files ending with ", end="")
         for extension in ignore_extensions :
             print (f" [{extension}] ", end="")
             pattern = f"{pattern}|.*\{extension}$"
@@ -109,10 +109,8 @@ def find_non_plots() :
     chia_farm = get_chia_farm_plots ( )
 
     print ("* ----------------------------------------------------------------------")
-    print ("* This routine scans your Chia farm for files that DO NOT END in .plot.")
-    print ("* If detected, you will be prompted to delete them.  All deletions are FINAL.")
+    print ("* Checking for non-plots files (files that DO NOT END in .plot)... ")
     print ("* ----------------------------------------------------------------------")
-    print ("* Checking for non-plots files... ")
     if is_verbose ( ) :
         logging.info ( f"Looking for non-plot files" )
 
@@ -154,7 +152,6 @@ def find_non_plots() :
             if is_verbose ( ) :
                 logging.info("No Files Were Deleted")
     else :
-        print ( "[OK] None found!" )
         if is_verbose ( ) :
             logging.info ( "No non-plots files found!" )
 
@@ -167,7 +164,9 @@ def find_duplicate_plots() :
     from PyInquirer import prompt
     largest_capacity = 0
 
-    print ( "* Checking for duplicate plot filenames ... " , end="" )
+    print ("* ----------------------------------------------------------------------")
+    print ( "* Checking for duplicate plot filenames ... ")
+    print ("* ----------------------------------------------------------------------")
     if is_verbose ( ) : logging.info("Looking for duplicate plots")
 
     """ Get the duplicate plotnames """
@@ -175,7 +174,6 @@ def find_duplicate_plots() :
 
     if duplicate_plotnames :
         number_of_files = len ( duplicate_plotnames )
-        print ( "[NOK]" )
         print ( indent ( "*" , "WARNING! Found %s plots with multiple copies" % (number_of_files) ) )
         for file in duplicate_plotnames :
             print ( indent ( ">" , "%s  found in (%s)" % (file , plot_path[file]) ) )
@@ -217,7 +215,6 @@ def find_duplicate_plots() :
             if is_verbose ( ) :
                 logging.info ( "Skipping. No files deleted!" )
     else :
-        print ( "[OK] None found!" )
         if is_verbose ( ) :
             logging.info ( "No duplicate names files found!" )
 
@@ -1268,7 +1265,7 @@ def do_show_farm_distribution():
     else:
         data=[[nft,"GREEN","NFT"],
               [og,"YELLOW","OG"],
-              ["","both","Yes",""]]
+              ["Your Farm Distribution","both","Yes",""]]
         stacked_bar_chart ( data , 40 )
 
 def do_show_farm_capacity():
