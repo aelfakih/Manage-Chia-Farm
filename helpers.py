@@ -679,8 +679,9 @@ def do_import_plots(style):
                     do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point( plot )) )
                     # delete size of destination plot directory
                     do_changes_to_database ( "DELETE FROM plot_directory WHERE drive = '%s'" % (find_mount_point ( import_to )) )
-            # rescan farm after changes
-            do_scan_farm ( )
+                    # rescan farm after changes
+                    do_scan_farm ( )
+
         else :
             print ( "* No plots were moved from %s" % (import_from) )
 def do_menu_overwrite_og_plots(style):
