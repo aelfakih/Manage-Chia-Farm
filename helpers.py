@@ -202,12 +202,14 @@ def find_duplicate_plots() :
                         remove_from_drive = dir
 
                 file_to_delete = remove_from_drive.strip ( ) + '\\' + file
-                print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
-                if is_verbose ( ) :
-                    logging.info ( "Deleting [%s]" % (file_to_delete) )
-                os.remove ( file_to_delete )
-                if is_verbose ( ) :
-                    logging.info ( "Deleting [%s]" % (file_to_delete) )
+
+                if os.path.exists ( file_to_delete ) :
+                    print ( indent ( "*" , "Deleting [%s]" % (file_to_delete) ) )
+                    if is_verbose ( ) :
+                        logging.info ( "Deleting [%s]" % (file_to_delete) )
+                    os.remove ( file_to_delete )
+                    if is_verbose ( ) :
+                        logging.info ( "Deleting [%s]" % (file_to_delete) )
 
             do_scan_farm ( )
         else :
