@@ -533,7 +533,7 @@ def do_import_plots(style):
         accomodates = round(line[3]/101.5)
         path = line[4]
         if os.path.exists(drive):
-            total , used , free = shutil.disk_usage ( drive )
+            total , used , free = shutil.disk_usage ( find_mount_point ( drive ) )
             # convert to GiB
             free = bytes_to_gib ( free )
             total = bytes_to_gib ( total )
@@ -638,16 +638,19 @@ def do_import_plots(style):
             if import_to == "Cancel":
                 return
 
-            drive = pathlib.Path ( import_to ).parts[0]
-            total , used , free = shutil.disk_usage ( drive )
+            mount_point = find_mount_point ( import_to )
+            total , used , free = shutil.disk_usage ( mount_point )
             # convert to GiB
             free = bytes_to_gib(free)
-            used = bytes_to_gib(used)
+            #used = bytes_to_gib(used)
             total_size_GiB = round(total_size_GiB,0)
 
         if free < total_size_GiB:
-            print ("** NOTICE! Some plots will be left behind due to free space available at destination.  (Plots %s GiB, Destination: %s GiB free)" % (total_size_GiB, free))
-            print ("* You can move the remaining plots to a different destination later by re-running this utility. ")
+            print ( "!---------------------------------------------------------------------------------")
+            print ( "! NOTICE! Some plots will be left behind due to lack of free space at destination.")
+            print (f"! (Total incoming plot(s) size {total_size_GiB} GiB, Available destination space: {free} GiB) at {mount_point}")
+            print ( "! You can move the remaining plots to a different destination later by re-running this utility. ")
+            print ( "!---------------------------------------------------------------------------------")
 
         if import_decision == True :
             questions = [
