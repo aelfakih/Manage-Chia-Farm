@@ -628,7 +628,7 @@ def do_import_plots(style):
             answers = prompt ( questions , style=style )
             import_to = answers['to'][answers['to'].find ( '[' ) + 1 :answers['to'].find ( ']' )]
 
-            # exit if they to and form are the same
+            # exit if the to and form are the same
             if import_from == find_mount_point ( import_to ):
                 print("! TO and FROM destinations are the same! Skipping")
                 if is_verbose ( ) :
