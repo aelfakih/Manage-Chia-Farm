@@ -642,7 +642,6 @@ def do_import_plots(style):
             total , used , free = shutil.disk_usage ( mount_point )
             # convert to GiB
             free = bytes_to_gib(free)
-            #used = bytes_to_gib(used)
             total_size_GiB = round(total_size_GiB,0)
 
         if free < total_size_GiB:
