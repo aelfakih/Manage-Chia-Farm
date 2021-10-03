@@ -4,14 +4,14 @@ chia_config_file: C:\Users\USERNAME\.chia\mainnet\config\config.yaml
 # location of chia executable, used when importing plots to verify that they belong to this farm
 chia_binary: C:\Users\USERNAME\AppData\Local\chia-blockchain\app-VERSION\resources\app.asar.unpacked\daemon\chia.exe
 
-# when verbose is true, the program ouputs extra information into log\audit.log
+# when verbose is true, the program outputs extra information into log\audit.log
 verbose: false
 
 # what level of logging do you want to show, by default it is ERROR
 # Available options are ERROR, INFO, DEBUG
 verbose_level: ERROR
 
-# Where do you want to store the database.  If not defined, it is stored in local directory "db"
+# Where do you want to store the database?  If not defined, it is stored in local directory "db"
 # database_location: db
 # check for git updates on startup
 check_for_update: true
@@ -20,6 +20,13 @@ check_for_update: true
 # NOTE! all extensions MUST start with a (.) dot. for example .txt , .plot.tmp
 ignore_extensions:
  - .plot.tmp
+
+# List the plot directories that you want to stop adding plots to (they will not show in menus)
+#do_no_import_into_this_plot_directory:
+# - C:\mnt\DISK01
+# - C:\mnt\DISK04
+# - C:\mnt\BOX5\001
+
 
 # what do you want to be the default action on the original plot after replacing an OG plot?
 # rename -- adds suffix imported to original plot (if you are paranoid and want to make they are copied stay in default mode)

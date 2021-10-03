@@ -507,6 +507,15 @@ def do_import_plots(style):
     from_drives =[]
     to_drives =[]
 
+
+    # get the list of plot directories to ignore (i.e. do not want to add any more plots to)
+    do_no_import_into_this_plot_directory = get_config ( 'config.yaml' ).get ( 'do_no_import_into_this_plot_directory' )
+    WhereStatement=""
+    if len(do_no_import_into_this_plot_directory) > 0:
+        JoinedString = ",".join("'{0}'".format(elem) for elem in do_no_import_into_this_plot_directory)
+        WhereStatment = "WHERE path NOT IN (%s)" %JoinedString
+
+
     free = 0
     used = 0
     action_keep = "Keep it"
@@ -523,9 +532,12 @@ def do_import_plots(style):
     pd.drive_free,
     pd.path
     FROM plot_directory as pd 
+    %s
     order by 
     pd.path;
-    """)
+    """
+    %WhereStatment)
+
     for line in results:
         drive = line[0]
         nft = line[1]
@@ -621,7 +633,7 @@ def do_import_plots(style):
                     'type' : 'list' ,
                     'name' : 'to' ,
                     'choices' : to_drives ,
-                    'message' : 'Which location you wanto to move plots TO?'
+                    'message' : 'Which location you want to move plots TO?'
 
                 }
             ]

@@ -36,25 +36,31 @@ MCF is designed to handle the management of thousands of plots in chia farms and
 ![Main Menu](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/main_menu.png?raw=true)
 
 ## 1.1 Farm Management
- * **Verify Plot Directories and Plots** This is an **exhaustive and slow process** to test and verify all the 
-    plots in the farm and learn about your farm to make management easier for larger farms.  Data collected is 
-    saved in a sqlite db called chia-farm-stats.db which is stored locally. The program:
-    * Checks that **directory plots are online** so that farmer can take action.
-    * **Verifies plots are valid** for the installed chia instance.
-    * **Classifies the plots as NFT or OG**.
-    * Saves location and size  
- * **Move plots**: Allows farmer to select source location from list and search for plots to move.  It also helps 
-   farmer in understanding how much available at destination.
+ * **Scan and Verify Plot Directories and Plots** 
+   * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
+    extension and prompt manager to delete the files to clear space.
+   * **Find duplicate plots**: Search the farm for duplicate file names and prompt manager to delete duplicates 
+    and maintain one copy to clear up space (it has logic to remove duplicates with minimal impact on 
+    compactness of farm).
+   * **Verify Plot Directories and Plots** This is an exhaustive process that tests and verifies all 
+      plots in the farm, and collects data along the way to make farm management easier for larger farms.  
+      Data collected is stored locally in a SQLite DB called *chia-farm-stats.db*. The program:
+      * Checks that **directory plots are online** so that farmer can take action.
+      * **Verifies plots are valid** for the installed chia instance.
+      * **Classifies the plots as NFT or OG**.
+      * Saves/Updates their location and size in GiB.  
+ * **Move plots**: Allows farmer to select source location from a list and search for plots to move.  It also helps 
+   farmer in understanding how much space is available at a given destination.
    This function allows the consolidation of plots into a location as you upgrade your drives or 
-   move plots from plotters to farm.  Source files can be:
-   * Kept at source location.
-   * Renamed (have an .imported extenstion)
-   *  or deleted.
+   move plots from plotting to farming.  When you select to move a plot, the source files can be:
+   * Kept at the source location.
+   * Renamed (add an ".imported" extenstion)
+   * or deleted
    NOTE that if you ctrl-C out of manage-chia-farm while executing a move plot command, it will apply the selected 
    action on source file -- if you do not want to lose any plots, always use the *imported* option then manually 
    delete the source files)    
  * **Overwrite OG Plots**: Allow farmers to automatically overwrite OGs when importing NFTs into farm 
-   without having to search for them or move them aroundm.  This is an important feature for farmers 
+   without having to search for them or move them around.  This is an important feature for farmers 
    that have OG plots and are migrating into an all NFT plot configuration.
  * **Resolve Issues Found**: This scans the data found during the *Verify Plot Directories and Plots* and
   give farmer the option to fix chia configuration file, and remove invalid plots.  (By default this option is
@@ -65,14 +71,7 @@ MCF is designed to handle the management of thousands of plots in chia farms and
 
 ![Sync Chia Forks](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/sync_chia_forks.gif?raw=true)
 
-## 1.2 Search
- * **Find non-plots**: Search in each of the farm folders, look for files that do not end with *.plot* 
-  extension and prompt manager to delete the files to clear space.
-  * **Find duplicate plots**: Search the farm for duplicate file names and prompt manager to delete duplicates 
-  and maintain one copy to clear up space (it has logic to remove duplicates with minimal impact on 
-  compactness of farm).
-
-## 1.3 Reporting
+## 1.2 Reporting
   * **Show Available Space**: This function scans the database and reports the available number of plots
     that can be stored in mounted plot directories (assumes k32 plot size 101.5 GiB)
     
@@ -83,7 +82,7 @@ MCF is designed to handle the management of thousands of plots in chia farms and
 
 ![Show Used Space](https://github.com/aelfakih/Manage-Chia-Farm/blob/master/captures/show_used_space.png?raw=true)
 
-## 1.4 Multiple Volume Mount Support
+## 1.3 Multiple Volume Mount Support
 
 MCF detects these types of drive mounts and returns space statistics:
 * **Letter mounted drives** (i.e. D:\, E:\)
@@ -221,6 +220,20 @@ chia_forks:
  - C:\Users\USERNAME\.spare-blockchain
 ```
 
+### do_no_import_into_this_plot_directory (Optional):
+Control which drives are available to import/move plots into farm through the config file.  List the plot directories of the 
+drives that you do not want to be modified/changed or there are issues when trying to make changes.  I created this feature 
+because I had an issue with a RAID device that was incorrectly reporting back more space to Windows. And there was another
+device that reported space but whenever a plot was copied to the space it was corrupted. (The decision was to mark the rest of the
+device unusable for plot storage and hide it from MCF)
+
+```buildoutcfg
+# List the plot directories that you want to stop adding plots to (they will not show in menus)
+#do_no_import_into_this_plot_directory:
+# - C:\mnt\DISK01
+# - C:\mnt\DISK04
+# - C:\mnt\BOX5\001
+```
 
 # 4. Usage
 To run this program, execute the following command
