@@ -820,6 +820,12 @@ def do_menu_overwrite_og_plots(style):
 
 
 def get_plots_to_import(import_from) :
+    """
+    Scans a list of files against the database and finds the ones that are tagged as NFTs.
+    Those are then returned back, so that they can be overwrite any OG at the selected destination to maximize the
+    size of the Chia farm usage of NFT plots
+    Note: Used in second step of the Overwrite OG Plots
+    """
     from database import get_results_from_database
 
     plots_to_import=[]
@@ -827,6 +833,7 @@ def get_plots_to_import(import_from) :
 
     """ Walk the drive looking for .plot files """
     nfts = 0
+    size_GiB=0
     for root , dirs , files in os.walk ( import_from ) :
         for file in files :
             if file.endswith ( ".plot" ) :
@@ -836,11 +843,12 @@ def get_plots_to_import(import_from) :
                     for line in data :
                         type = line[0]
                 filename = root + '\\' + file
-                plots_to_import.append ( filename )
-                size_GiB = bytes_to_gib ( os.path.getsize ( filename ) )
-                total_size_GiB += size_GiB
-                print ( f"> {filename} ({size_GiB} GiB)  (Format: {type})" )
-                nfts += 1
+                if type == "NFT":
+                    plots_to_import.append ( filename )
+                    size_GiB = bytes_to_gib ( os.path.getsize ( filename ) )
+                    total_size_GiB += size_GiB
+                    print ( f"> {filename} ({size_GiB} GiB)  (Format: {type})" )
+                    nfts += 1
                 if is_verbose ( ) :
                     logging.info ( f"{filename} ({size_GiB} GiB)  (Format: {type})" )
 
@@ -848,6 +856,11 @@ def get_plots_to_import(import_from) :
 
 
 def get_list_nft_source_locations() :
+    """
+    This gets a list of all SOURCES that have known OGS in them.  This assumes
+    that MCF has ran at least once before and has enough data to know if there are OGS.
+    NOTE:  This is the First step in Overwrite OG Plots
+    """
     from database import  get_results_from_database
     from_drives=[]
 
@@ -868,6 +881,7 @@ def get_list_nft_source_locations() :
             # convert to GiB
             free = bytes_to_gib ( free )
             total = bytes_to_gib ( total )
+            # Only show items that have sources that are known to have NFT in them
             if nft > 1 :
                 from_drives.append (
                     f'[{drive}]{print_spaces ( drive , 25 )}| {nft:3.0f} NFTs, {og:3.0f} OGs | {free:5.0f}/{total:5.0f} ({free / total * 100:5.2f})% GiB Free  |  ' )
